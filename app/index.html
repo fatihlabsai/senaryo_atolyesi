@@ -1806,7 +1806,7 @@ function portfolioView(p){
 
 /* Masaüstü güncelleme kontrolü. Yalnızca Electron içinde (window.senaryoDesktop) çalışır.
    latest.json biçimi: {"version":"1.1.0","url":"https://...indirme...exe","notes":"kısa not"} */
-const UPDATE_FEED = 'https://raw.githubusercontent.com/fatihlabsai/senaryo-atolyesi-releases/main/latest.json';
+const UPDATE_FEED = 'https://raw.githubusercontent.com/fatihlabsai/senaryo_atolyesi/main/latest.json';
 function verNums(v){ return String(v).split('.').map(n => parseInt(n, 10) || 0); }
 function isNewerVersion(a, b){
   const x = verNums(a), y = verNums(b);
