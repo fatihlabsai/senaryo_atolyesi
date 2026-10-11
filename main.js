@@ -1,4 +1,4 @@
-const { app, BrowserWindow, Menu } = require('electron');
+const { app, BrowserWindow, Menu, ipcMain, shell } = require('electron');
 const path = require('path');
 
 function createWindow() {
@@ -10,10 +10,19 @@ function createWindow() {
     title: 'Senaryo Atölyesi',
     backgroundColor: '#f1eee7',
     autoHideMenuBar: true,
-    webPreferences: { contextIsolation: true }
+    webPreferences: {
+      contextIsolation: true,
+      preload: path.join(__dirname, 'preload.js')
+    }
   });
   win.loadFile(path.join(__dirname, 'app', 'index.html'));
 }
+
+ipcMain.handle('app-version', () => app.getVersion());
+ipcMain.handle('open-external', (_event, url) => {
+  // Yalnızca https bağlantıları dış tarayıcıda açılır.
+  if (typeof url === 'string' && url.startsWith('https://')) return shell.openExternal(url);
+});
 
 app.whenReady().then(() => {
   Menu.setApplicationMenu(null);

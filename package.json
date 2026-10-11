@@ -1,7 +1,7 @@
 {
   "name": "senaryo-atolyesi",
   "productName": "Senaryo Atölyesi",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Senaryo yazarları için yardımcı uygulama",
   "main": "main.js",
   "scripts": {
@@ -16,10 +16,28 @@
   "build": {
     "appId": "com.senaryoatolyesi.app",
     "productName": "Senaryo Atölyesi",
-    "files": ["main.js", "app/**/*"],
-    "directories": {"output": "dist"},
-    "win": {"target": ["nsis"]},
-    "nsis": {"oneClick": false, "allowToChangeInstallationDirectory": true},
-    "mac": {"target": ["dmg"], "category": "public.app-category.productivity"}
+    "files": [
+      "main.js",
+      "preload.js",
+      "app/**/*"
+    ],
+    "directories": {
+      "output": "dist"
+    },
+    "win": {
+      "target": [
+        "nsis"
+      ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true
+    },
+    "mac": {
+      "target": [
+        "dmg"
+      ],
+      "category": "public.app-category.productivity"
+    }
   }
 }

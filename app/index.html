@@ -18,7 +18,14 @@ body{font-family:var(--sans);font-size:15px;line-height:1.5;background:var(--pap
 :focus-visible{outline:2px solid var(--red);outline-offset:2px}
 
 .app{display:grid;grid-template-columns:248px minmax(0,1fr);min-height:100vh}
-.side{background:var(--paper);border-right:1px solid var(--line);padding:24px 16px;position:sticky;top:0;height:100vh;overflow-y:auto}
+.side{background:var(--paper);border-right:1px solid var(--line);padding:24px 16px;position:sticky;top:0;height:100vh;overflow-y:auto;display:flex;flex-direction:column}
+#updBox{margin-top:auto;padding-top:14px}
+.upd-btn{width:100%;text-align:left;display:flex;gap:10px;align-items:center;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:var(--surface);color:var(--ink);font:inherit;font-size:14px;cursor:pointer}
+.upd-btn small{color:var(--ink2);font-size:12px}
+.upd-btn:hover{border-color:var(--ink2)}
+.upd-btn.ready{border-color:var(--red);box-shadow:inset 3px 0 0 var(--red)}
+.upd-dot{width:8px;height:8px;border-radius:50%;background:var(--red);flex:0 0 auto}
+.upd-btn:disabled{opacity:.6;cursor:default}
 main{width:100%;max-width:1080px;margin:0 auto;padding:36px 44px 64px}
 .brand{font-family:var(--serif);font-size:20px;font-weight:600;padding:0 8px 20px;margin:0}
 .side-label{font-size:13px;color:var(--ink2);padding:0 8px 8px}
@@ -243,6 +250,7 @@ dialog .foot{display:flex;justify-content:flex-end;gap:8px;margin-top:8px}
     <div id="projectList"></div>
     <button class="btn primary" id="newProj">Yeni proje</button>
     <button class="btn ghost" id="undoBtn" style="width:100%;margin-top:8px" title="Son değişikliği geri al (Ctrl+Z)">Geri al</button>
+    <div id="updBox"></div>
   </nav>
   <main id="app"></main>
 </div>
@@ -1796,7 +1804,58 @@ function portfolioView(p){
     </div>` : ''}`;
 }
 
+/* Masaüstü güncelleme kontrolü. Yalnızca Electron içinde (window.senaryoDesktop) çalışır.
+   latest.json biçimi: {"version":"1.1.0","url":"https://...indirme...exe","notes":"kısa not"} */
+const UPDATE_FEED = 'https://raw.githubusercontent.com/fatihlabsai/senaryo-atolyesi-releases/main/latest.json';
+function verNums(v){ return String(v).split('.').map(n => parseInt(n, 10) || 0); }
+function isNewerVersion(a, b){
+  const x = verNums(a), y = verNums(b);
+  for (let i = 0; i < 3; i++){
+    if ((x[i] || 0) > (y[i] || 0)) return true;
+    if ((x[i] || 0) < (y[i] || 0)) return false;
+  }
+  return false;
+}
+function renderUpdateBox(){
+  const box = document.getElementById('updBox');
+  if (!box) return;
+  if (!window.senaryoDesktop){ box.innerHTML = ''; return; }
+  if (ui.update){
+    box.innerHTML = `<button class="upd-btn ready" data-upd="open" title="${esc(ui.update.notes || '')}">
+      <span class="upd-dot"></span>
+      <span><strong>Güncelleme var</strong><br><small>Sürüm ${esc(ui.update.version)} indir</small></span></button>`;
+    return;
+  }
+  const cur = ui.updCurrent || '';
+  let status = ui.updError ? esc(ui.updError)
+    : ui.updChecking ? 'Denetleniyor…'
+    : ui.updChecked ? 'Güncel' : '';
+  box.innerHTML = `<button class="upd-btn" data-upd="check" ${ui.updChecking ? 'disabled' : ''}>
+    <span><small>Sürüm ${esc(cur || '…')}${status ? ' · ' + status : ''}</small><br>Güncellemeleri denetle</span></button>`;
+}
+async function checkForUpdate(){
+  const d = window.senaryoDesktop;
+  if (!d || ui.updChecking) return;
+  ui.updChecking = true; renderUpdateBox();
+  try{
+    const cur = await d.getVersion();
+    ui.updCurrent = cur;
+    const r = await fetch(UPDATE_FEED, {cache: 'no-store'});
+    if (!r.ok) throw new Error('feed ' + r.status);
+    const j = await r.json();
+    ui.update = (j && j.version && j.url && isNewerVersion(j.version, cur))
+      ? {version: String(j.version), url: String(j.url), notes: String(j.notes || '')} : null;
+    ui.updError = null;
+    ui.updChecked = new Date().toISOString();
+  }catch(e){
+    ui.updError = 'Güncelleme sunucusuna ulaşılamadı';
+  }finally{
+    ui.updChecking = false;
+    renderUpdateBox();
+  }
+}
 function renderSidebar(){
+  renderUpdateBox();
   const cp = cur();
   const ub = document.getElementById('undoBtn');
   if (ub) ub.disabled = HIST.length === 0;
@@ -1965,6 +2024,19 @@ if (window.claude && window.claude.use){
   window.claude.use('sample').then(ns => { ui.canDraft = !!ns; if (ui.canDraft) render(); }).catch(() => {});
 }
 
+document.getElementById('updBox').addEventListener('click', e => {
+  const b = e.target.closest('button[data-upd]');
+  if (!b) return;
+  if (b.dataset.upd === 'open' && ui.update){
+    if (window.senaryoDesktop) window.senaryoDesktop.openExternal(ui.update.url);
+  } else {
+    checkForUpdate();
+  }
+});
+if (window.senaryoDesktop){
+  setTimeout(checkForUpdate, 3000);
+  setInterval(checkForUpdate, 6 * 60 * 60 * 1000);
+}
 document.getElementById('newProj').onclick = () => openProjDialog(null);
 document.getElementById('undoBtn').onclick = () => undo();
 // Ctrl+Z: metin alanlarının içinde tarayıcının kendi geri almasına bırakılır.
