@@ -1,0 +1,25 @@
+{
+  "name": "senaryo-atolyesi",
+  "productName": "Senaryo Atölyesi",
+  "version": "1.0.0",
+  "description": "Senaryo yazarları için yardımcı uygulama",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "dist:win": "electron-builder --win nsis",
+    "dist:mac": "electron-builder --mac dmg"
+  },
+  "devDependencies": {
+    "electron": "31.7.7",
+    "electron-builder": "25.1.8"
+  },
+  "build": {
+    "appId": "com.senaryoatolyesi.app",
+    "productName": "Senaryo Atölyesi",
+    "files": ["main.js", "app/**/*"],
+    "directories": {"output": "dist"},
+    "win": {"target": ["nsis"]},
+    "nsis": {"oneClick": false, "allowToChangeInstallationDirectory": true},
+    "mac": {"target": ["dmg"], "category": "public.app-category.productivity"}
+  }
+}

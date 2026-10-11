@@ -1,0 +1,2413 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light">
+<title>Senaryo Atölyesi</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600&family=Instrument+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#f1eee7; --surface:#fbfaf6; --ink:#1f1c18; --ink2:#5f594f;
+  --line:#dcd6c9; --red:#a8432b; --red-soft:#f3dfd6;
+  --green:#3f6b4f; --ochre:#b98126; --grey:#bcb4a5;
+  --serif:"Newsreader", Georgia, serif; --sans:"Instrument Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{font-family:var(--sans);font-size:15px;line-height:1.5;background:var(--paper);color:var(--ink)}
+:focus-visible{outline:2px solid var(--red);outline-offset:2px}
+
+.app{display:grid;grid-template-columns:248px minmax(0,1fr);min-height:100vh}
+.side{background:var(--paper);border-right:1px solid var(--line);padding:24px 16px;position:sticky;top:0;height:100vh;overflow-y:auto}
+main{width:100%;max-width:960px;margin:0 auto;padding:36px 44px 64px}
+.brand{font-family:var(--serif);font-size:20px;font-weight:600;padding:0 8px 20px;margin:0}
+.side-label{font-size:13px;color:var(--ink2);padding:0 8px 8px}
+.proj-link{display:block;width:100%;text-align:left;padding:8px 10px;border:0;background:none;border-radius:6px;color:var(--ink);font:inherit;cursor:pointer}
+.proj-link:hover{background:rgba(31,28,24,.05)}
+.proj-link[aria-current="true"]{background:var(--surface);box-shadow:inset 2px 0 0 var(--red)}
+.side .btn{width:100%;margin-top:16px}
+
+h1,h2,h3{font-family:var(--serif);font-weight:500;margin:0;line-height:1.2}
+h1{font-size:36px;font-weight:600}
+h2{font-size:24px}
+h3{font-size:19px}
+.logline{font-family:var(--serif);font-style:italic;font-size:18px;color:var(--ink2);margin:8px 0 0;max-width:60ch}
+.muted{color:var(--ink2);font-size:13px}
+
+.btn{font:inherit;font-size:14px;padding:8px 14px;border-radius:6px;border:1px solid var(--line);background:var(--surface);color:var(--ink);cursor:pointer}
+.btn:hover{border-color:var(--ink2)}
+.btn.primary{background:var(--ink);border-color:var(--ink);color:var(--surface)}
+.btn.primary:hover{background:#38332c}
+.btn.ghost{background:none;border-color:transparent;color:var(--ink2)}
+.btn.ghost:hover{color:var(--ink);border-color:transparent}
+.btn.danger{color:#963023}
+.btn.small{padding:4px 10px;font-size:13px}
+.btn:disabled{opacity:.5;cursor:default}
+input,textarea,select{font:inherit;font-size:14px;padding:9px 11px;border:1px solid var(--line);border-radius:6px;background:#fff;color:var(--ink);width:100%}
+textarea{min-height:64px;resize:vertical}
+input:focus,textarea:focus,select:focus{outline:2px solid var(--red-soft);border-color:var(--red)}
+.field{display:flex;flex-direction:column;gap:6px;margin-bottom:12px}
+.field>span{font-size:13px;color:var(--ink2)}
+.manu{font-family:var(--serif);font-size:16px;line-height:1.7;min-height:180px}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.between{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap}
+
+.head{display:flex;justify-content:space-between;align-items:flex-start;gap:24px;flex-wrap:wrap}
+/* Üst menü: tek satır, sticky. Sığmazsa yatay kayar ama kaydırma çubuğu görünmez. */
+.tabs{position:sticky;top:0;z-index:5;display:flex;flex-wrap:nowrap;gap:2px;margin:20px -44px 24px;padding:0 44px;background:var(--paper);border-bottom:1px solid var(--line);overflow-x:auto;scrollbar-width:none;-ms-overflow-style:none}
+.tabs::-webkit-scrollbar{display:none}
+.tabs button{flex:0 0 auto;background:none;border:0;border-bottom:2px solid transparent;padding:14px 9px 12px;margin-bottom:-1px;color:var(--ink2);font:inherit;font-size:14px;cursor:pointer;white-space:nowrap}
+.tabs button:hover{color:var(--ink)}
+.tabs button[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--red);font-weight:600}
+.tabs .cnt{margin-left:4px}
+.cnt{font-size:12px;color:var(--ink2);margin-left:6px}
+
+.card{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:20px;margin-bottom:16px}
+.card-title{margin:0 0 16px}
+.empty{color:var(--ink2);text-align:center;padding:32px 16px;border:1px dashed var(--line);border-radius:10px;margin-bottom:16px}
+.slug{font-family:"Courier New",Courier,monospace;font-size:13px;font-weight:600;letter-spacing:.02em;text-transform:uppercase;color:var(--ink)}
+
+.strip{display:flex;gap:4px;height:26px;margin-bottom:20px}
+.strip span{flex:1;min-width:6px;border-radius:3px}
+.strip span.taslak{background:var(--grey)}
+.strip span.yazildi{background:var(--green)}
+.strip span.revize{background:var(--ochre)}
+.toolbar{display:flex;gap:8px;margin-bottom:16px}
+.toolbar input{flex:1}
+.toolbar select{width:auto}
+.scene{display:grid;grid-template-columns:52px minmax(0,1fr);gap:12px;scroll-margin-top:24px}
+.scene.dragging{opacity:.4}
+.scene.over{box-shadow:0 -3px 0 var(--red)}
+.scene .num{font-family:var(--serif);font-size:32px;line-height:1;color:var(--ink2)}
+.scene h3{font-size:18px}
+.scene p{margin:8px 0 0}
+.status{display:inline-flex;align-items:center;gap:7px;font:inherit;font-size:13px;color:var(--ink2);background:none;border:0;padding:0;cursor:pointer;white-space:nowrap}
+.status::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--grey)}
+.status.yazildi::before{background:var(--green)}
+.status.revize::before{background:var(--ochre)}
+.meta{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-top:10px}
+.tag{font-size:12px;padding:2px 9px;border-radius:99px;background:var(--paper);border:1px solid var(--line)}
+#focusLayer{position:fixed;inset:0;z-index:300;background:var(--surface);display:flex;flex-direction:column;overflow:auto}
+.focus-top{position:sticky;top:0;z-index:1;display:flex;gap:12px;align-items:center;flex-wrap:wrap;padding:12px 20px;border-bottom:1px solid var(--line);background:var(--surface)}
+.focus-slug{flex:1;min-width:0;font-weight:600;letter-spacing:.02em}
+.focus-body{width:min(720px, calc(100% - 40px));margin:24px auto 48px;flex:1;display:flex;flex-direction:column;gap:12px}
+#focusText{flex:1;min-height:70vh;width:100%;border:none;outline:none;background:transparent;font:18px/1.8 Georgia,serif;color:var(--ink);resize:none;padding:0}
+.manuscript{font-family:var(--serif);font-size:16px;line-height:1.7;white-space:pre-wrap;margin-top:12px;padding:14px 16px;background:#fff;border:1px solid var(--line);border-radius:8px;max-height:320px;overflow:auto}
+.draftbox{margin-top:12px;padding:12px 14px;border:1px dashed var(--line);border-radius:8px}
+.actions{display:flex;gap:2px;flex-wrap:wrap;margin-top:12px;align-items:center}
+.handle{cursor:grab;color:var(--ink2);padding:4px 8px;user-select:none}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{font:inherit;font-size:13px;padding:5px 12px;border-radius:99px;border:1px solid var(--line);background:#fff;color:var(--ink2);cursor:pointer;text-align:left}
+.chip[aria-pressed="true"]{background:var(--ink);border-color:var(--ink);color:var(--surface)}
+label.chip{display:inline-flex;align-items:center;gap:6px;cursor:pointer}
+label.chip input{width:auto;margin:0}
+
+.chars{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:16px}
+.chars .card{margin:0}
+dl{margin:12px 0 0;display:grid;gap:8px}
+dl div{display:grid;grid-template-columns:90px 1fr;gap:8px;font-size:14px}
+dt{color:var(--ink2)}
+dd{margin:0}
+
+.cand{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:14px 0;border-top:1px solid var(--line)}
+.cand p{margin:0;font-family:var(--serif);font-size:18px}
+.saved{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:12px 0;border-top:1px solid var(--line)}
+.saved p{margin:0;font-family:var(--serif);font-size:17px;flex:1}
+
+.role-badge{font-size:12px;padding:3px 10px;border-radius:99px;color:var(--surface);background:var(--rc,var(--grey))}
+.char-card dl{margin-top:10px}
+.conn{display:inline-block;margin-top:2px}
+.cand-row{display:flex;gap:10px;align-items:flex-start;padding:10px 0;border-top:1px solid var(--line);cursor:pointer}
+.cand-row:first-child{border-top:0}
+.sb-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:14px}
+.sb-frame{aspect-ratio:16/9;background:#fff;border:1px dashed var(--line);border-radius:8px;display:flex;align-items:center;justify-content:center;overflow:hidden}
+.sb-frame img{width:100%;height:100%;object-fit:cover}
+.sb-shot{font-family:"Courier New",Courier,monospace;font-size:12px;font-weight:700;letter-spacing:.03em}
+.sb-bubble{margin-top:8px;background:#fff;border:1px solid var(--line);border-radius:12px;padding:8px 10px;font-size:14px}
+.cek-row{display:flex;gap:10px;align-items:center;padding:8px 0;border-top:1px solid var(--line)}
+.start-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.start-card{display:flex;flex-direction:column;gap:8px;text-align:left;padding:22px;border:1px solid var(--line);border-radius:12px;background:var(--surface);color:var(--ink);font:inherit;cursor:pointer}
+.start-card:hover{border-color:var(--ink2)}
+.start-t{font-family:var(--serif);font-size:22px;font-weight:500}
+@media (max-width:600px){.start-grid{grid-template-columns:1fr}}
+.ep-side{display:flex;flex-direction:column;gap:2px;margin:2px 0 10px 14px;padding-left:12px;border-left:1px solid var(--line)}
+.ep-link{display:flex;align-items:center;gap:8px;width:100%;text-align:left;padding:6px 8px;border:0;background:none;border-radius:6px;color:var(--ink2);font:inherit;font-size:14px;cursor:pointer}
+.ep-link:hover{color:var(--ink);background:rgba(31,28,24,.05)}
+.ep-link[aria-current="true"]{color:var(--ink);background:var(--surface);box-shadow:inset 2px 0 0 var(--red)}
+.ep-no{font-family:var(--serif);font-size:13px;color:var(--ink2);min-width:14px}
+.ep-label{display:inline-flex;align-items:center;gap:6px;font-size:12px;color:var(--ink2);background:var(--paper);border:1px solid var(--line);border-radius:99px;padding:2px 10px;margin-bottom:10px}
+.flowlist{margin:0;padding:0 0 0 22px}
+.flowlist li{padding:8px 0;border-bottom:1px solid var(--line)}
+.flowlist li:last-child{border-bottom:0}
+.issues{margin:0;padding:0;list-style:none}
+.issues li{padding:10px 0;border-top:1px solid var(--line);font-size:14px}
+.issues li:first-child{border-top:0}
+
+.stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;margin-bottom:16px}
+.stats .card{margin:0}
+.stat-v{font-family:var(--serif);font-size:36px;line-height:1.1}
+.bar{height:6px;background:var(--line);border-radius:99px;overflow:hidden;margin-top:12px}
+.bar span{display:block;height:100%;background:var(--red);border-radius:99px}
+.inline{display:flex;gap:8px}
+.inline input{width:auto;flex:1}
+
+.paper{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:32px;font-family:var(--serif);font-size:17px;line-height:1.65;max-width:70ch}
+.paper h3{margin-top:24px}
+.paper p{margin:4px 0 0}
+
+dialog{border:1px solid var(--line);border-radius:12px;padding:24px;width:min(480px,92vw);background:var(--surface);color:var(--ink);font:inherit}
+dialog::backdrop{background:rgba(31,28,24,.35)}
+dialog .foot{display:flex;justify-content:flex-end;gap:8px;margin-top:8px}
+
+.rel-to{width:180px;flex:0 0 180px}
+.rel-row{flex-wrap:nowrap}
+@media (max-width:760px){
+  .app{grid-template-columns:minmax(0,1fr)}
+  main{min-width:0}
+  .side{position:static;height:auto;border-right:0;border-bottom:1px solid var(--line);padding:16px 16px 14px;min-width:0}
+  .side .btn,#projectList{max-width:100%}
+  .brand{padding:0 4px 10px;font-size:18px}
+  .side .btn{margin-top:10px}
+  #undoBtn{margin-top:6px!important}
+  main{padding:20px 16px 56px;max-width:100%}
+  .tabs{margin:14px -16px 18px;padding:0 16px}
+  h1{font-size:28px}
+  h2{font-size:22px}
+  h3{font-size:18px}
+  .card{padding:16px;border-radius:12px}
+  .paper{padding:20px 18px;font-size:16px}
+  .two{grid-template-columns:1fr}
+  .stats{grid-template-columns:1fr}
+  .stat-v{font-size:30px}
+  .scene{grid-template-columns:36px minmax(0,1fr);gap:10px}
+  .scene .num{font-size:24px}
+  .head{gap:12px}
+  .toolbar{flex-wrap:wrap}
+  .toolbar input,.toolbar select{flex:1 1 100%;width:100%}
+  .inline{flex-wrap:wrap}
+  .inline input{flex:1 1 100%}
+  .rel-row{flex-wrap:wrap}
+  .rel-to{width:100%;flex:1 1 100%}
+  .rel-row input{flex:1 1 calc(100% - 90px)}
+  .actions{gap:4px}
+  .actions .btn,.row .btn{min-height:40px}
+  .btn{padding:9px 14px}
+  .btn.small{padding:8px 12px;font-size:14px;min-height:36px}
+  /* iOS, input odağında sayfayı yakınlaştırmasın diye 16px */
+  input,textarea,select{font-size:16px}
+  .dl-row,dl div{grid-template-columns:1fr;gap:2px}
+  .chars{grid-template-columns:1fr}
+  .sb-grid{grid-template-columns:1fr}
+  .focus-top{padding:10px 14px;gap:8px}
+  .focus-body{width:calc(100% - 28px);margin:16px auto 40px}
+  #focusText{font-size:17px}
+  dialog{padding:18px;width:calc(100vw - 24px)}
+  dialog .foot{flex-wrap:wrap}
+  dialog .foot .btn{flex:1 1 auto}
+  .cand,.saved{flex-wrap:wrap}
+}
+@media (max-width:380px){
+  main{padding:16px 12px 48px}
+  .tabs{margin:12px -12px 16px;padding:0 12px}
+  .scene{grid-template-columns:28px minmax(0,1fr);gap:8px}
+  .scene .num{font-size:20px}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;scroll-behavior:auto!important}}
+</style>
+
+<div class="app">
+  <nav class="side" aria-label="Projeler">
+    <p class="brand">Senaryo Atölyesi</p>
+    <div class="side-label">Projeler</div>
+    <div id="projectList"></div>
+    <button class="btn primary" id="newProj">Yeni proje</button>
+    <button class="btn ghost" id="undoBtn" style="width:100%;margin-top:8px" title="Son değişikliği geri al (Ctrl+Z)">Geri al</button>
+  </nav>
+  <main id="app"></main>
+</div>
+
+<dialog id="projDlg">
+  <h2 class="card-title" id="projDlgTitle">Yeni proje</h2>
+  <form id="projForm">
+    <div class="field"><span>Proje adı</span><input id="projTitleIn" required></div>
+    <div class="field"><span>Logline (tek cümlelik özet)</span><textarea id="projLoglineIn"></textarea></div>
+    <div class="field"><span>Tür</span><select id="projKindIn"><option value="film">Film</option><option value="dizi">Dizi (bölümlü)</option></select></div>
+    <div class="field"><span>Senaryo biçimi (Word çıktısı için)</span><select id="projFormatIn"><option value="amerikan">Amerikan</option><option value="fransiz">Fransız</option></select></div>
+    <div class="foot">
+      <button type="button" class="btn ghost" id="projCancel">Vazgeç</button>
+      <button type="submit" class="btn primary">Kaydet</button>
+    </div>
+  </form>
+</dialog>
+
+<script>
+const KEY = 'senaryo-atolyesi-v1';
+const STATUS_LABEL = {taslak:'Taslak', yazildi:'Yazıldı', revize:'Revize'};
+const NEXT = {taslak:'yazildi', yazildi:'revize', revize:'taslak'};
+const TABS = {sahneler:'Sahneler', bolumler:'Bölümler', karakterler:'Karakterler', yay:'Karakter yayı', mekanlar:'Mekanlar', cekim:'Çekim planı', storyboard:'Storyboard', detaylar:'Detaylar', kontrol:'Tutarlılık', akis:'Akış', logline:'Logline', hedef:'Yazma hedefi', portfolyo:'Portfolyo'};
+const GENRES = ['Dram','Komedi','Gerilim','Korku','Romantik','Bilim kurgu','Macera','Suç'];
+const TIMES = ['GÜN','GECE','SABAH','AKŞAM'];
+const INTS = ['İÇ','DIŞ'];
+
+let state = loadState();
+let ui = {projectId:null, tab:'sahneler', editingId:null, q:'', filter:'tumu',
+          lg:{genre:'Dram', char:'', want:'', obst:''}, cands:[], draft:null, canDraft:false, epFilter:'tumu'};
+let dlgEditId = null;
+
+function loadState(){
+  try { return JSON.parse(localStorage.getItem(KEY)) || {projects:[]}; }
+  catch(e){ return {projects:[]}; }
+}
+// Geri alma: her kayıtta önceki hali hafızada tutulur (en fazla 30). Sayfa yenilenince sıfırlanır.
+const HIST = [];
+function save(){
+  const prev = localStorage.getItem(KEY);
+  const next = JSON.stringify(state);
+  if (prev !== null && prev !== next){ HIST.push(prev); if (HIST.length > 30) HIST.shift(); }
+  localStorage.setItem(KEY, next);
+}
+function undo(){
+  const prev = HIST.pop();
+  if (!prev) return false;
+  state = JSON.parse(prev);
+  localStorage.setItem(KEY, prev);
+  if (!state.projects.some(p => p.id === ui.projectId)) ui.projectId = state.projects[0] ? state.projects[0].id : null;
+  ui.editingId = null; ui.draft = null; ui.armed = null;
+  render();
+  return true;
+}
+function uid(){ return Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
+function esc(s){
+  return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+function dkey(d = new Date()){
+  return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+}
+function cur(){ return state.projects.find(p => p.id === ui.projectId); }
+function wordCount(t){ return (t || '').trim().split(/\s+/).filter(Boolean).length; }
+const trim = s => String(s ?? '').replace(/\s+/g, ' ').trim();
+function charName(p, id){ const c = p.chars.find(x => x.id === id); return c ? c.name : ''; }
+function locName(p, id){ const l = (p.locs || []).find(x => x.id === id); return l ? l.name : ''; }
+function lower(s){ return String(s ?? '').toLocaleLowerCase('tr-TR'); }
+function upper(s){ return String(s ?? '').toLocaleUpperCase('tr-TR'); }
+function escRe(s){ return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
+// Ad metin içinde kelime olarak geçiyor mu ("Ali", "Aliye" içinde değil)
+function wordHas(text, key){
+  if (!key) return false;
+  return new RegExp('(^|[^\\p{L}\\p{N}])' + escRe(key) + '($|[^\\p{L}\\p{N}])', 'u').test(text);
+}
+// Yayınlanmış sayfada indirme Claude'un downloads yeteneğiyle yapılır. Bilgisayardaki uygulamada
+// (file:// ile açılan dosya) doğrudan tarayıcı indirmesi kullanılır.
+function download(name, data){
+  if (dl){ dl.save({filename: name, data}).catch(() => {}); return; }
+  if (!LOCAL_APP) return;
+  const blob = data instanceof Blob ? data : new Blob([data], {type: 'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = name;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1500);
+}
+function canDl(){ return !!dl || LOCAL_APP; }
+
+// Yalnızca yeni yazılan kelimeleri günlük hedefe ekler. s.wc sahnenin en yüksek kelime sayısıdır.
+function creditWords(p, s){
+  const w = wordCount(s.text), prev = s.wc || 0;
+  if (w > prev){
+    p.log = p.log || {};
+    const k = dkey();
+    p.log[k] = (p.log[k] || 0) + (w - prev);
+  }
+  s.wc = Math.max(prev, w);
+}
+function streak(p){
+  const log = p.log || {};
+  const d = new Date();
+  if ((log[dkey(d)] || 0) < p.goal) d.setDate(d.getDate() - 1);
+  let n = 0;
+  while ((log[dkey(d)] || 0) >= p.goal){ n++; d.setDate(d.getDate() - 1); }
+  return n;
+}
+
+function readFields(box){
+  const o = {};
+  box.querySelectorAll('[data-f]').forEach(i => o[i.dataset.f] = i.value.trim());
+  return o;
+}
+function readScene(box){
+  const o = readFields(box);
+  o.charIds = [...box.querySelectorAll('.chip[aria-pressed="true"]')].map(x => x.dataset.cid);
+  return o;
+}
+function readDetail(box){
+  const o = readFields(box);
+  o.sceneIds = [...box.querySelectorAll('.chip[aria-pressed="true"]')].map(x => x.dataset.sid);
+  return o;
+}
+
+// Standart sahne başlığı: "1. İÇ. MUTFAK - GECE". Mekan yoksa sahne adı kullanılır.
+function sluglineOf(p, s){
+  const ln = locName(p, s.loc);
+  if (!ln) return upper(s.title || 'SAHNE');
+  return `${s.ie || 'İÇ'}. ${upper(ln)} - ${s.time || 'GÜN'}`;
+}
+
+// Dizi bölümleri: sıra numarası konumdan gelir, ad isteğe bağlıdır.
+function epIndex(p, id){ return (p.episodes || []).findIndex(e => e.id === id); }
+function epName(p, id){
+  const i = epIndex(p, id);
+  if (i < 0) return '';
+  const e = p.episodes[i];
+  return `Bölüm ${i + 1}${e.title ? ' · ' + e.title : ''}`;
+}
+function isDizi(p){ return p && p.kind === 'dizi'; }
+// Tarayıcı penceresi (confirm) bazı görünümlerde çalışmaz. Silme, aynı düğmeye iki kez basmayla onaylanır.
+function sure(key){
+  if (ui.armed === key){ ui.armed = null; return true; }
+  ui.armed = key; return false;
+}
+function delBtn(act, id, label = 'Sil'){
+  const armed = ui.armed === act + ':' + id;
+  return `<button class="btn ghost small danger" data-act="${act}" data-id="${id}">${armed ? 'Emin misin?' : label}</button>`;
+}
+// Şu an üzerinde çalışılan bölüm: düzenlenen sahnenin bölümü, yoksa seçili bölüm süzgeci.
+function activeEpId(p){
+  if (ui.editingId){
+    const s = p.scenes.find(x => x.id === ui.editingId);
+    if (s && epIndex(p, s.episodeId) >= 0) return s.episodeId;
+  }
+  return epIndex(p, ui.epFilter) >= 0 ? ui.epFilter : null;
+}
+
+// Sahne metni: "Ayşe: merhaba" satırı, Ayşe karakter listesindeyse diyalogdur; diğerleri eylemdir.
+function parseSceneText(p, text){
+  const out = [];
+  let last = null;
+  const cast = (p.chars || []).map(c => ({name: c.name, key: lower(c.name)}));
+  String(text || '').split('\n').forEach(raw => {
+    const line = raw.trim();
+    if (!line){ last = null; return; }
+    const m = line.match(/^([^:]{1,40}):\s*(.*)$/);
+    const hit = m ? cast.find(c => c.key === lower(m[1].trim())) : null;
+    if (hit){
+      out.push({type: 'cue', text: hit.name});
+      last = out[out.length - 1];
+      if (m[2]){ out.push({type: 'dialogue', text: m[2]}); last = out[out.length - 1]; }
+      return;
+    }
+    if (last && last.type === 'cue'){ out.push({type: 'dialogue', text: line}); last = out[out.length - 1]; return; }
+    if (last && last.type === 'dialogue'){ last.text += '\n' + line; return; }
+    out.push({type: 'action', text: line});
+    last = out[out.length - 1];
+  });
+  return out;
+}
+
+/* Tutarlılık kontrolleri: sorun değil, uyarı. Son kararı senarist verir. */
+function checkConsistency(p){
+  const warn = [];
+  const cast = p.chars.map(c => ({id: c.id, name: c.name, key: lower(c.name)}));
+  const usage = {};
+  p.scenes.forEach((s, i) => {
+    const n = i + 1, label = `${n}. sahne`;
+    if (isDizi(p) && p.episodes.length && epIndex(p, s.episodeId) < 0)
+      warn.push(`${label}: hangi bölüme ait olduğu seçilmemiş.`);
+    if (!s.loc && !s.title) warn.push(`${label}: mekan ve sahne adı yok.`);
+    else if (!s.loc) warn.push(`${label}: mekan seçilmemiş.`);
+    if (s.loc){
+      (usage[s.loc] = usage[s.loc] || new Set()).add(s.ie || 'İÇ');
+    }
+    const inScene = new Set(s.charIds || []);
+    const blocks = parseSceneText(p, s.text);
+    blocks.filter(b => b.type === 'cue').forEach(b => {
+      const c = cast.find(x => x.name === b.text);
+      if (c && !inScene.has(c.id)) warn.push(`${label}: ${c.name} konuşuyor ama sahnenin karakterleri arasında değil.`);
+    });
+    const body = lower(s.text || '');
+    cast.forEach(c => {
+      if (body && wordHas(body, c.key) && !inScene.has(c.id))
+        warn.push(`${label}: ${c.name} metinde geçiyor ama sahnenin karakterleri arasında değil.`);
+    });
+    (s.text || '').split('\n').forEach(raw => {
+      const m = raw.trim().match(/^([^:]{1,25}):/);
+      if (!m) return;
+      const nm = m[1].trim();
+      if (nm.split(/\s+/).length <= 2 && !/\d/.test(nm) && !cast.some(c => c.key === lower(nm)))
+        warn.push(`${label}: "${nm}:" biçiminde bir satır var ama karakter listesinde yok. Yeni karakter mi, yoksa yazım hatası mı?`);
+    });
+    (p.details || []).forEach(d => {
+      if (wordHas(body, lower(d.name)) && !(d.sceneIds || []).includes(s.id))
+        warn.push(`${label}: "${d.name}" metinde geçiyor ama detay takip listesinde bu sahneye bağlı değil.`);
+    });
+  });
+  Object.entries(usage).forEach(([locId, set]) => {
+    if (set.size > 1) warn.push(`${locName(p, locId)}: hem İÇ hem DIŞ olarak kullanılmış. Bilerek mi?`);
+  });
+  return warn;
+}
+
+/* Taslak üretimi: Claude'un örnekleme yeteneği üzerinden. Yetenek yoksa düğme gizlenir. */
+function draftPrompt(p, s){
+  const cast = (s.charIds || []).map(id => p.chars.find(c => c.id === id)).filter(Boolean);
+  const castLines = cast.map(c => `- ${c.name}${c.role ? ' (' + c.role + ')' : ''}${c.tag ? ': ' + c.tag : ''}
+  görünüm/yaş: ${c.age || '-'}; kişilik: ${c.traits || '-'}; kusur: ${c.flaw || '-'}
+  istediği: ${c.want || '-'}; gerçekte ihtiyacı olan: ${c.need || '-'}; korktuğu: ${c.fear || '-'}
+  konuşma tarzı: ${c.voice || '-'}; örnek replik: ${c.sample || '-'}`).join('\n');
+  const dets = (p.details || []).filter(d => (d.sceneIds || []).includes(s.id))
+    .map(d => `- ${d.name}: ${d.desc || ''}`).join('\n');
+  const idx = p.scenes.findIndex(x => x.id === s.id);
+  const prev = idx > 0 ? p.scenes[idx - 1] : null;
+  const prevText = prev && prev.text ? prev.text.slice(-600) : '';
+  const names = cast.map(c => c.name).join(', ') || '(yok)';
+  return `Türkçe bir film senaryosu sahnesi yaz.
+Proje: ${p.title}. Logline: ${p.logline || '-'}
+Sahne başlığı: ${sluglineOf(p, s)}
+${isDizi(p) && epName(p, s.episodeId) ? 'Bölüm: ' + epName(p, s.episodeId) + '\n' : ''}Amaç: ${s.goal || '-'}
+Sahnedeki karakterler:
+${castLines || '-'}
+Önemli detaylar (geçmeli ya da tutarlı kalmalı):
+${dets || '-'}
+Senaristin notu: ${s.brief || '-'}
+${prevText ? 'Önceki sahnenin son kısmı (tutarlılık için):\n' + prevText : ''}
+
+Kurallar:
+- Her satır ya eylemdir ya da diyalogdur.
+- Diyalog satırı tam olarak "KARAKTER ADI: replik" biçimindedir. Yalnızca şu adları kullan: ${names}.
+- Eylem satırları düz cümlelerdir. Başlık, madde işareti, açıklama ya da tırnak kullanma.
+- Sahne başlığını tekrar yazma, yalnızca sahne metnini yaz.
+- Kısa ve sahnenin amacına odaklı tut.`;
+}
+async function draftScene(p, s){
+  if (!(window.claude && window.claude.use)) throw new Error('Taslak üretimi bu görünümde kullanılamıyor.');
+  const sample = await window.claude.use('sample');
+  if (!sample) throw new Error('Taslak üretimi bu görünümde kullanılamıyor.');
+  const r = await sample(draftPrompt(p, s), {modelTier: 'default', cache: false});
+  return (r && r.text) || '';
+}
+
+/* Sahne görünümü */
+function sceneFields(p, s = {}){
+  const sel = s.charIds || [];
+  const chips = p.chars.length
+    ? p.chars.map(c => `<button type="button" class="chip" data-act="toggleChar" data-cid="${c.id}" aria-pressed="${sel.includes(c.id)}">${esc(c.name)}</button>`).join('')
+    : '<span class="muted">Henüz karakter yok. Karakter sekmesinden ekleyebilirsin.</span>';
+  const epSel = s.episodeId !== undefined ? s.episodeId : (ui.epFilter !== 'tumu' && ui.epFilter !== 'none' ? ui.epFilter : '');
+  const epField = isDizi(p) ? `<div class="field"><span>Bölüm</span><select data-f="episodeId"><option value="">Bölüm yok</option>${p.episodes.map((e, i) => `<option value="${e.id}" ${e.id === epSel ? 'selected' : ''}>${esc(epName(p, e.id))}</option>`).join('')}</select></div>` : '';
+  return `
+    ${epField}
+    <div class="two">
+      <div class="field"><span>Mekan</span><select data-f="loc"><option value="">Mekan seç</option>${(p.locs || []).map(l => `<option value="${l.id}" ${l.id === s.loc ? 'selected' : ''}>${esc(l.name)}</option>`).join('')}</select></div>
+      <div class="field"><span>İç / dış</span><select data-f="ie">${INTS.map(v => `<option ${v === (s.ie || 'İÇ') ? 'selected' : ''}>${v}</option>`).join('')}</select></div>
+    </div>
+    <div class="two">
+      <div class="field"><span>Zaman</span><select data-f="time">${TIMES.map(v => `<option ${v === (s.time || 'GÜN') ? 'selected' : ''}>${v}</option>`).join('')}</select></div>
+      <div class="field"><span>Sahne adı (isteğe bağlı)</span><input data-f="title" value="${esc(s.title)}"></div>
+    </div>
+    <div class="field"><span>Amaç: bu sahnede ne değişiyor?</span><textarea data-f="goal">${esc(s.goal)}</textarea></div>
+    <div class="field"><span>Bu sahnedeki karakterler</span><div class="chips">${chips}</div></div>
+    <div class="two">
+      <div class="field"><span>Başta duygu / durum</span><input data-f="from" value="${esc(s.from)}"></div>
+      <div class="field"><span>Sonda duygu / durum</span><input data-f="to" value="${esc(s.to)}"></div>
+    </div>
+    <div class="field"><span>Sahne briefi (ne olacak, nelere dikkat edilecek)</span><textarea data-f="brief">${esc(s.brief)}</textarea></div>
+    <div class="field"><span>Sahne metni (eylem ve diyalog)</span><textarea data-f="text" class="manu" placeholder="Eylemi satır satır yaz. Diyalog için 'Ayşe: Merhaba' gibi yaz. Ad, karakter listesindeki bir isim olmalı.">${esc(s.text)}</textarea></div>
+    <div class="field"><span>Notlar</span><textarea data-f="notes">${esc(s.notes)}</textarea></div>`;
+}
+function draftBox(s){
+  const d = ui.draft;
+  if (!d || d.id !== s.id) return '';
+  if (d.busy) return `<div class="draftbox"><div class="muted">Taslak yazılıyor…</div></div>`;
+  if (d.err) return `<div class="draftbox"><div class="muted">${esc(d.err)}</div></div>`;
+  return `<div class="draftbox">
+    <div class="muted">Taslak hazır. Beğenirsen metne ekle, düzenleyip kaydet.</div>
+    <div class="manuscript">${esc(d.text)}</div>
+    <div class="actions">
+      <button class="btn primary small" data-act="useDraft" data-id="${s.id}">Metne ekle</button>
+      <button class="btn ghost small" data-act="dropDraft">At</button>
+    </div>
+  </div>`;
+}
+
+function sceneCard(p, s, i, dragOn){
+  const editing = ui.editingId === s.id;
+  const names = (s.charIds || []).map(id => charName(p, id)).filter(Boolean);
+  const epTag = isDizi(p)
+    ? `<div class="ep-label">${esc(epName(p, s.episodeId) || 'Bölüm yok')}</div>` : '';
+  return `<article class="card scene" id="s-${s.id}" data-id="${s.id}" ${dragOn && !editing ? 'draggable="true"' : ''}>
+    <div class="num">${i+1}</div>
+    <div>${epTag}${editing ? `
+      ${sceneFields(p, s)}
+      <div class="actions">
+        <button class="btn primary small" data-act="saveScene" data-id="${s.id}">Kaydet</button>
+        ${ui.canDraft ? `<button class="btn small" data-act="draft" data-id="${s.id}">Taslak üret</button>` : ''}
+        <button class="btn ghost small" data-act="cancelEdit">Vazgeç</button>
+      </div>
+      ${draftBox(s)}` : `
+      <div class="between">
+        <div>
+          <div class="slug">${esc(sluglineOf(p, s))}</div>
+          ${s.title ? `<h3 style="margin-top:4px">${esc(s.title)}</h3>` : ''}
+        </div>
+        <div class="row">
+          <span class="muted">${wordCount(s.text)} kelime</span>
+          <button class="status ${s.status}" data-act="status" data-id="${s.id}" title="Durumu değiştir">${STATUS_LABEL[s.status]}</button>
+        </div>
+      </div>
+      ${s.goal ? `<p>${esc(s.goal)}</p>` : ''}
+      ${s.brief ? `<div class="muted" style="margin-top:6px">Brif: ${esc(s.brief)}</div>` : ''}
+      ${(names.length || s.from || s.to) ? `<div class="meta">
+        ${names.map(n => `<span class="tag">${esc(n)}</span>`).join('')}
+        ${(s.from || s.to) ? `<span class="muted">${esc(s.from)} → ${esc(s.to)}</span>` : ''}
+      </div>` : ''}
+      ${s.text ? `<div class="manuscript">${esc(s.text)}</div>` : ''}
+      ${s.notes ? `<div class="muted" style="margin-top:10px">${esc(s.notes)}</div>` : ''}
+      <div class="actions">
+        ${dragOn ? '<span class="handle" title="Sürükleyerek taşı">⋮⋮</span>' : ''}
+        <button class="btn ghost small" data-act="up" data-id="${s.id}" aria-label="Yukarı taşı">Yukarı</button>
+        <button class="btn ghost small" data-act="down" data-id="${s.id}" aria-label="Aşağı taşı">Aşağı</button>
+        <button class="btn ghost small" data-act="focus" data-id="${s.id}" title="Sahneyi tam ekranda yaz">Odak modu</button>
+        <button class="btn ghost small" data-act="edit" data-id="${s.id}">Düzenle</button>
+        ${delBtn('delScene', s.id)}
+      </div>`}
+    </div>
+  </article>`;
+}
+
+function visibleScenes(p){
+  const q = lower(ui.q.trim());
+  return p.scenes.map((s, i) => ({s, i})).filter(({s}) => {
+    if (ui.filter !== 'tumu' && s.status !== ui.filter) return false;
+    if (ui.epFilter === 'none' && epIndex(p, s.episodeId) >= 0) return false;
+    if (ui.epFilter !== 'tumu' && ui.epFilter !== 'none' && s.episodeId !== ui.epFilter) return false;
+    if (!q) return true;
+    const names = (s.charIds || []).map(id => charName(p, id)).join(' ');
+    return lower([s.title, sluglineOf(p, s), s.goal, s.brief, s.notes, s.text, names].join(' ')).includes(q);
+  });
+}
+// Liste ve bölüm başlığı (sayaçlar) birlikte yenilenir. Sayfa yeniden çizilmez, form yazıları kalır.
+function renderSceneList(p){
+  const wrap = document.getElementById('epRowWrap');
+  if (wrap) wrap.innerHTML = epChipRow(p);
+  const box = document.getElementById('sceneList');
+  if (!box) return;
+  const items = visibleScenes(p);
+  const dragOn = !ui.q.trim() && ui.filter === 'tumu' && ui.epFilter === 'tumu';
+  box.innerHTML = items.length
+    ? items.map(({s, i}) => sceneCard(p, s, i, dragOn)).join('')
+    : (p.scenes.length
+        ? '<div class="empty">Aramana ya da filtrene uyan sahne yok.</div>'
+        : '<div class="empty">Henüz sahne yok. Yukarıdaki formla ilk sahneni ekle.</div>');
+  attachDnd(p);
+}
+function attachDnd(p){
+  const box = document.getElementById('sceneList');
+  if (!box) return;
+  box.querySelectorAll('.scene[draggable="true"]').forEach(el => {
+    el.addEventListener('dragstart', e => {
+      e.dataTransfer.setData('text/plain', el.dataset.id);
+      e.dataTransfer.effectAllowed = 'move';
+      el.classList.add('dragging');
+    });
+    el.addEventListener('dragend', () => el.classList.remove('dragging'));
+    el.addEventListener('dragover', e => { e.preventDefault(); el.classList.add('over'); });
+    el.addEventListener('dragleave', () => el.classList.remove('over'));
+    el.addEventListener('drop', e => {
+      e.preventDefault();
+      const from = p.scenes.findIndex(s => s.id === e.dataTransfer.getData('text/plain'));
+      const to = p.scenes.findIndex(s => s.id === el.dataset.id);
+      if (from < 0 || to < 0 || from === to) return;
+      const [moved] = p.scenes.splice(from, 1);
+      p.scenes.splice(to, 0, moved);
+      save(); render();
+    });
+  });
+}
+function scenesView(p){
+  // Şerit yalnızca bilgi amaçlıdır: her çubuk bir sahnenin durumunu gösterir, tıklanmaz.
+  const strip = p.scenes.length
+    ? `<div class="strip" aria-label="Sahne durumları">${p.scenes.map((s, i) =>
+        `<span class="${s.status}" title="${i+1}. ${esc(s.title || sluglineOf(p, s))} · ${STATUS_LABEL[s.status]}"></span>`).join('')}</div>
+      <p class="muted" style="margin:-12px 0 16px;font-size:12px">Her çubuk bir sahne. Gri: taslak · Yeşil: yazıldı · Sarı: revize</p>` : '';
+  const opts = [['tumu','Tümü'], ['taslak','Taslak'], ['yazildi','Yazıldı'], ['revize','Revize']]
+    .map(([v, l]) => `<option value="${v}" ${ui.filter === v ? 'selected' : ''}>${l}</option>`).join('');
+  return `
+    ${strip}
+    <div class="toolbar">
+      <input id="sceneSearch" type="search" placeholder="Sahne, karakter, mekan ya da metin ara" value="${esc(ui.q)}" aria-label="Sahnelerde ara">
+      <select id="sceneFilter" aria-label="Duruma göre filtrele">${opts}</select>
+    </div>
+    ${importView()}
+    <section class="card" id="newBox">
+      <h3 class="card-title">Yeni sahne</h3>
+      ${sceneFields(p)}
+      <button class="btn primary" data-act="addScene">Sahneyi ekle</button>
+    </section>
+    <div id="epRowWrap">${epChipRow(p)}</div>
+    <div id="sceneList"></div>`;
+}
+// Bölüm süzgeci, sahne listesinin hemen üstünde durur. Her çipte o bölümün sahne sayısı yazar.
+function epChipRow(p){
+  if (!isDizi(p)) return '';
+  if (!p.episodes.length)
+    return '<p class="muted" style="margin:0 0 12px">Dizi projesinde sahneler bölümlere bağlanır. Önce Bölümler sekmesinden bölüm ekle.</p>';
+  const noneCount = p.scenes.filter(s => epIndex(p, s.episodeId) < 0).length;
+  const items = [
+    ['tumu', 'Tümü', p.scenes.length],
+    ...p.episodes.map((e, i) => [e.id, `Bölüm ${i + 1}${e.title ? ' · ' + e.title : ''}`, p.scenes.filter(s => s.episodeId === e.id).length]),
+    ...(noneCount ? [['none', 'Bölümsüz', noneCount]] : [])
+  ];
+  const cur = items.find(([v]) => v === ui.epFilter) || items[0];
+  return `
+    <div class="ep-filter-head">
+      <span class="muted">Listede gösterilen: <strong style="color:var(--ink);font-weight:600">${esc(cur[1])}</strong> · ${visibleScenes(p).length} sahne</span>
+    </div>
+    <div class="chips" id="epChips" style="margin-bottom:16px" aria-label="Bölüme göre süz">${items.map(([v, l, n]) =>
+      `<button type="button" class="chip" data-act="epFilter" data-ep="${v}" aria-pressed="${ui.epFilter === v}">${esc(l)} <span style="opacity:.6">${n}</span></button>`).join('')}</div>`;
+}
+
+/* Yazılmış senaryoyu içe aktarma (.docx). Sahne başlıkları "İÇ." ya da "DIŞ." ile başlar. */
+const PAREN_RE = /^\(.*\)$/;
+function toTitle(s){ return s.toLocaleLowerCase('tr-TR').replace(/(^|\s)(\S)/g, (m, a, b) => a + b.toLocaleUpperCase('tr-TR')); }
+function cleanName(l){ return l.replace(/\(.*?\)/g, '').replace(/\s+/g, ' ').trim(); }
+function parseHeadingLine(line){
+  const body = line.replace(/^\d+\.?\s+/, '');
+  // Biçim 1: "SAHNE 1 – MEKAN – İÇ – GECE" (harf büyüklüğü ve sıra serbest)
+  const sm = body.match(/^SAHNE\s*\d+\s*[-–—]\s*(.+)$/i);
+  if (sm){
+    let ie = 'İÇ', time = 'GÜN';
+    const locParts = [];
+    sm[1].split(/\s*[-–—]\s*/).map(s => s.trim()).filter(Boolean).forEach(pt => {
+      const u = upper(pt);
+      if (/^(İÇ|DIŞ|INT|EXT)$/.test(u)) ie = /^(DIŞ|EXT)$/.test(u) ? 'DIŞ' : 'İÇ';
+      else if (/^(GÜN|GECE|SABAH|AKŞAM)$/.test(u)) time = u;
+      else locParts.push(pt);
+    });
+    return {ie, loc: upper(locParts.join(' ')), time};
+  }
+  // "İÇ. MUTFAK - GECE", "İÇ MUTFAK - GECE", "INT. KITCHEN - NIGHT", "İÇ/DIŞ. ..." kabul edilir.
+  // Nokta yoksa yalnızca büyük harfli satırlar başlık sayılır ("İçeride..." cümlesi başlık olmaz).
+  const m = body.match(/^(İÇ\/DIŞ|İÇ|DIŞ|INT|EXT)([.\s])\s*(.+)$/i);
+  if (!m) return null;
+  if (m[2] !== '.' && upper(m[3]) !== m[3]) return null;
+  const ie = /^(DIŞ|EXT)$/i.test(m[1]) ? 'DIŞ' : 'İÇ';
+  const parts = m[3].trim().split(/\s+[-–—]\s+/);
+  const loc = upper(parts[0].trim());
+  const tm = upper(parts.slice(1).join(' '));
+  let time = 'GÜN';
+  if (/GECE|NIGHT/.test(tm)) time = 'GECE';
+  else if (/SABAH|MORNING/.test(tm)) time = 'SABAH';
+  else if (/AKŞAM|EVENING|DUSK/.test(tm)) time = 'AKŞAM';
+  return {ie, loc, time};
+}
+// Büyük harfli, kısa, noktalama ile bitmeyen satır konuşmacı adıdır.
+// Kısa, noktalama ile bitmeyen ve hemen altında bir satır olan satır konuşmacı adıdır.
+// Büyük ya da küçük harf fark etmez ("ECEVİT", "tv kadın").
+function isCue(l, next){
+  if (!l || !next || PAREN_RE.test(l)) return false;
+  const c = cleanName(l);
+  return c.length > 1 && c.length <= 30 && c.split(' ').length <= 3
+    && /\p{L}/u.test(c) && !/[.!?…:,;\d]$/.test(c) && !parseHeadingLine(l);
+}
+function toSceneText(lines){
+  const out = [], cast = [];
+  let i = 0;
+  while (i < lines.length){
+    const l = lines[i];
+    if (!l){ out.push(''); i++; continue; }
+    if (isCue(l, lines[i + 1])){
+      const name = toTitle(cleanName(l));
+      const parts = [];
+      let j = i + 1;
+      while (j < lines.length && lines[j] && !isCue(lines[j], lines[j + 1])){
+        if (!PAREN_RE.test(lines[j])) parts.push(lines[j]);
+        j++;
+      }
+      if (parts.length){
+        out.push(`${name}: ${parts.join(' ').replace(/^\([^)]*\)\s*/, '')}`);
+        if (!cast.includes(name)) cast.push(name);
+        i = j; continue;
+      }
+    }
+    out.push(l); i++;
+  }
+  return {text: out.join('\n').replace(/\n{3,}/g, '\n\n').trim(), cast};
+}
+// Her Word paragrafını satırlara böler. Paragraf içi satır sonları (Shift+Enter, w:br) ve
+// sekmeler de dikkate alınır. Boş paragraflar '' olarak döner, bunlar diyalog ayırıcısıdır.
+function docxParagraphs(xml){
+  const doc = new DOMParser().parseFromString(xml, 'application/xml');
+  const lines = [];
+  [...doc.getElementsByTagName('*')].filter(el => el.localName === 'p').forEach(p => {
+    let s = '';
+    [...p.getElementsByTagName('*')].forEach(el => {
+      // Yalnızca bu paragrafın kendi içeriğini al, iç içe metin kutularını ayrı paragraf say.
+      let a = el.parentNode;
+      while (a && a.localName !== 'p') a = a.parentNode;
+      if (a !== p) return;
+      if (el.localName === 't') s += el.textContent;
+      else if (el.localName === 'tab') s += ' ';
+      else if (el.localName === 'br' || el.localName === 'cr') s += '\n';
+    });
+    if (!s.trim()){ lines.push(''); return; }
+    s.split('\n').forEach(l => lines.push(l.trim()));
+  });
+  return lines;
+}
+// .docx bir zip dosyasıdır. Yalnızca word/document.xml parçasını okuruz.
+async function readDocx(file){
+  if (typeof DecompressionStream === 'undefined') throw new Error('Bu tarayıcı dosya açamıyor. Chrome, Edge ya da Safari ile dene.');
+  const buf = new Uint8Array(await file.arrayBuffer());
+  const dv = new DataView(buf.buffer);
+  let eocd = -1;
+  for (let i = buf.length - 22; i >= Math.max(0, buf.length - 65557); i--){
+    if (dv.getUint32(i, true) === 0x06054b50){ eocd = i; break; }
+  }
+  if (eocd < 0) throw new Error('Bu dosya geçerli bir Word dosyası değil.');
+  const count = dv.getUint16(eocd + 10, true);
+  let p = dv.getUint32(eocd + 16, true);
+  const dec = new TextDecoder('utf-8');
+  for (let n = 0; n < count; n++){
+    const method = dv.getUint16(p + 10, true), csize = dv.getUint32(p + 20, true);
+    const nlen = dv.getUint16(p + 28, true), xlen = dv.getUint16(p + 30, true), clen = dv.getUint16(p + 32, true);
+    const lho = dv.getUint32(p + 42, true);
+    const name = dec.decode(buf.subarray(p + 46, p + 46 + nlen));
+    if (name === 'word/document.xml'){
+      const start = lho + 30 + dv.getUint16(lho + 26, true) + dv.getUint16(lho + 28, true);
+      const raw = buf.subarray(start, start + csize);
+      let bytes;
+      if (method === 0) bytes = raw;
+      else if (method === 8){
+        const ds = new Blob([raw]).stream().pipeThrough(new DecompressionStream('deflate-raw'));
+        bytes = new Uint8Array(await new Response(ds).arrayBuffer());
+      } else throw new Error('Bu Word dosyasının sıkıştırma biçimi desteklenmiyor.');
+      return dec.decode(bytes);
+    }
+    p += 46 + nlen + xlen + clen;
+  }
+  throw new Error('Dosyada senaryo metni bulunamadı.');
+}
+// Bölüm başlığı: "BÖLÜM 1", "BÖLÜM 2 - Kapı". Yalnızca rakamlı ya da büyük harfli satırlar sayılır.
+function episodeLine(line){
+  const m = line.match(/^B[ÖO]L[ÜU]M(?:\s*(\d+))?(?:\s*[-–—:.]\s*(.*))?$/i);
+  if (!m) return null;
+  if (!m[1] && upper(line) !== line) return null;
+  return {title: (m[2] || '').trim()};
+}
+async function analyzeDocx(file){
+  const paras = docxParagraphs(await readDocx(file));
+  const scenes = [], episodes = [];
+  let cur = null, curEp = -1;
+  paras.forEach(line => {
+    const eh = line ? episodeLine(line) : null;
+    if (eh){ episodes.push({title: eh.title ? toTitle(eh.title) : ''}); curEp = episodes.length - 1; cur = null; return; }
+    const h = line ? parseHeadingLine(line) : null;
+    if (h){ cur = {...h, ep: curEp, lines: []}; scenes.push(cur); return; }
+    if (cur) cur.lines.push(line);
+  });
+  // Sahnesi olmayan bölüm başlıkları (kapak, içindekiler) atlanır.
+  const used = episodes.map((_, i) => scenes.some(s => s.ep === i));
+  const remap = {}, keptEps = [];
+  episodes.forEach((e, i) => { if (used[i]){ remap[i] = keptEps.length; keptEps.push(e); } });
+  scenes.forEach(s => { s.ep = s.ep >= 0 && used[s.ep] ? remap[s.ep] : -1; });
+  const counts = {};
+  scenes.forEach(sc => {
+    const r = toSceneText(sc.lines);
+    sc.text = r.text; sc.cast = r.cast; delete sc.lines;
+    r.cast.forEach(n => counts[n] = (counts[n] || 0) + 1);
+  });
+  const locs = [...new Set(scenes.map(s => s.loc).filter(Boolean))];
+  const chars = Object.entries(counts).map(([name, count]) => ({name, count})).sort((a, b) => b.count - a.count);
+  const sample = paras.filter(Boolean).slice(0, 6).map(s => s.slice(0, 60));
+  return {scenes, locs, chars, episodes: keptEps, paraCount: paras.length, sample};
+}
+function importView(){
+  if (ui.impErr) return `<section class="card">
+    <h3 class="card-title">Senaryo dosyası</h3>
+    <p class="muted" style="margin:0 0 12px">${esc(ui.impErr)}</p>
+    <input type="file" id="docxIn" accept=".docx"></section>`;
+  if (!ui.imp) return `<section class="card">
+    <h3 class="card-title">Yazdığın senaryoyu içe aktar</h3>
+    <p class="muted" style="margin:-8px 0 12px">Word (.docx) dosyasını seç. Sahne başlıkları ("İÇ." ya da "DIŞ." ile başlayan satırlar), karakter adları ve diyaloglar otomatik ayrılır. Eklemeden önce önizlemede kontrol edersin.</p>
+    <input type="file" id="docxIn" accept=".docx"></section>`;
+  const imp = ui.imp, p = cur();
+  const known = new Set(p.chars.map(c => lower(c.name)));
+  const newChars = imp.chars.filter(c => !known.has(lower(c.name)));
+  return `<section class="card">
+    <h3 class="card-title">Önizleme</h3>
+    <p class="muted" style="margin:-8px 0 12px">${imp.scenes.length} sahne ve ${imp.locs.length} mekan bulundu.${imp.episodes.length ? ` ${imp.episodes.length} bölüm başlığı bulundu.` : ''} Eklemek istediğin yeni karakterleri işaretle.</p>
+    ${imp.episodes.length && !isDizi(p) ? '<p class="muted" style="margin:0 0 12px">Proje film olarak ayarlı, bölümler eklenmeyecek. Bölümlere ayırmak için proje düzenlemesinden türü Dizi seç.</p>' : ''}
+    ${newChars.length
+      ? `<div id="impChars" class="chips" style="margin-bottom:14px">${newChars.map(c => `<label class="chip"><input type="checkbox" value="${esc(c.name)}" checked>${esc(c.name)} · ${c.count} konuşma</label>`).join('')}</div>`
+      : '<p class="muted">Bulunan karakterlerin hepsi zaten projede.</p>'}
+    <ol class="flowlist" style="margin-bottom:14px">${imp.scenes.slice(0, 12).map(sc => `<li>${esc(sc.ie)}. ${esc(sc.loc || 'MEKAN YOK')} - ${esc(sc.time)}${sc.cast.length ? `<div class="muted">${esc(sc.cast.join(', '))}</div>` : ''}</li>`).join('')}</ol>
+    ${imp.scenes.length > 12 ? `<p class="muted">… ve ${imp.scenes.length - 12} sahne daha.</p>` : ''}
+    <div class="row">
+      <button class="btn primary" data-act="importDocx">İçe aktar</button>
+      <button class="btn ghost" data-act="cancelImport">Vazgeç</button>
+    </div>
+  </section>`;
+}
+
+/* Fikir: serbest notlar, Claude ile logline / sinopsis / bölüm özeti çıkarma */
+/* Claude'a öğretilen tanımlar. Özetleme bu metne göre çalışır. */
+const TANIM = `
+LOGLINE: Tek cümle, en fazla 35 kelime. Yapısı: kim (kahraman, bir sıfatla) + ne istiyor (somut hedef) + neyin engeli var (karşı güç) + bedel ya da ironi. Sonu vermez, spoiler içermez. Örnek biçim: "Borçlu bir balıkçı, kaybolan kızını bulmak için kasabanın sırrını çözmek zorunda kalır; ama sırrı açığa çıkarmak, kendi ailesini yok edecektir."
+
+SİNOPSİS: 1-3 paragraf, düz ve sade Türkçe, şimdiki zamanla yazılır. Sırayla: kurulum (kim, nerede, ne eksik), olay örgüsü (ana çatışma ve ilerleyiş), doruk (en büyük kriz) ve sonuç (son durum, nasıl bitiyor). Sonu açıkça yazılır. Her karakter ilk geçtiğinde kısa bir tanımla verilir. Teknik jargon, "bu film/dizi" gibi ifadeler kullanılmaz.
+
+DİZİ BÖLÜM YAPISI: Her bölüm için şunlar yazılır:
+- ozet: 2-3 cümle, bölümde ne oluyor.
+- amac: bölümün dramatik işlevi (ör. "kahramanın ilk büyük kaybı", "sırrın yarısının açığa çıkması", "ittifakın bozulması").
+- kanca: bölümün sonunda izleyiciyi sonraki bölüme çeken soru ya da olay.
+Bölümler sezon arkını taşır: ilk bölüm kurulumdur, son bölüm çözülmeye ya da büyük bir açık kapıya bağlanır. Bölümler arasında bir yükseliş olmalı, düz tekrar olmamalı.
+SEZON ARKI: Dizinin genel yayı, 3-5 cümle (başta kim, sonda kim).
+
+GENEL KURALLAR: Notlarda olmayan önemli olay ya da karakter uydurma. Eksik kalan yerleri "(belirsiz)" diye işaretle. Karakter ve mekan adlarını aşağıdaki listeden kullan.
+`;
+function ideaPrompt(p, text){
+  const dizi = isDizi(p);
+  const n = dizi ? (p.episodes.length || 8) : 0;
+  const chars = (p.chars || []).map(c => `- ${c.name}${c.role ? ' (' + c.role + ')' : ''}${c.tag ? ': ' + c.tag : ''}${c.want ? '; istediği: ' + c.want : ''}`).join('\n') || '-';
+  const locs = (p.locs || []).map(l => `- ${l.name}`).join('\n') || '-';
+  const extraJson = dizi
+    ? `,
+  "sezon_arki": "3-5 cümle",
+  "bolumler": [{"no": 1, "ozet": "...", "amac": "...", "kanca": "..."}] (tam ${n} bölüm, sırayla)`
+    : '';
+  const yonerge = (p.guideNotes || '').trim();
+  return `${TANIM}
+Türkçe bir ${dizi ? 'dizi' : 'film'} için senaristin serbest notlarını bu tanımlara göre özetle.
+Proje adı: ${p.title}
+Mevcut logline: ${p.logline || '-'}
+Karakterler:
+${chars}
+Mekanlar:
+${locs}
+${yonerge ? 'Senaristin ek yönergesi:\n' + yonerge + '\n' : ''}
+Senaristin notları:
+"""
+${text}
+"""
+
+Yanıtı YALNIZCA geçerli JSON olarak ver. Başka metin, açıklama ya da kod bloğu yazma.
+{"logline": "...",
+  "sinopsis": "..."${extraJson}}`;
+}
+function parseJsonLoose(t){
+  const a = t.indexOf('{'), b = t.lastIndexOf('}');
+  if (a < 0 || b < a) throw new Error('Yanıt okunamadı. Tekrar dene.');
+  return JSON.parse(t.slice(a, b + 1));
+}
+async function ideaCall(prompt){
+  if (!(window.claude && window.claude.use)) throw new Error('Özetleme bu görünümde kullanılamıyor.');
+  const sample = await window.claude.use('sample');
+  if (!sample) throw new Error('Özetleme bu görünümde kullanılamıyor.');
+  const r = await sample(prompt, {modelTier: 'default', cache: false});
+  return (r && r.text) || '';
+}
+/* Fikir aşaması: yalnızca yeni projenin başında görünür. Ana alana geçince kaybolur. */
+function ideaIntakeView(){
+  return `
+    <section class="card">
+      <h2 class="card-title">Fikrini anlat</h2>
+      <p class="muted" style="margin:-8px 0 16px">Düzensiz de olsa yaz: konu, karakterler, sevdiğin sahneler, sonu. Kaydettikten sonra istersen logline, sinopsis ve bölüm özetlerini çıkarabilirsin.</p>
+      <div class="two">
+        <div class="field"><span>Çalışma adı (sonra değiştirebilirsin)</span><input id="intakeTitle" placeholder="Örn. Balıkçının Dönüşü"></div>
+        <div class="field"><span>Tür</span><select id="intakeKind"><option value="film">Film</option><option value="dizi">Dizi (bölümlü)</option></select></div>
+      </div>
+      <div class="field"><textarea id="ideaIn" class="manu" style="min-height:280px" placeholder="Örn. Yaşlı bir balıkçı kasabaya dönen eski sevgilisinin yalan söylediğini fark ediyor..."></textarea></div>
+      ${ui.idea && ui.idea.err ? `<p class="muted" style="margin:0 0 12px">${esc(ui.idea.err)}</p>` : ''}
+      <div class="row">
+        <button class="btn primary" data-act="intakeCreate">Kaydet ve devam et</button>
+        <button class="btn ghost" data-act="intakeCancel">Vazgeç</button>
+      </div>
+    </section>`;
+}
+function ideaView(p){
+  const busy = ui.idea && ui.idea.busy;
+  const g = p.generated;
+  const genCards = g ? `
+    <section class="card">
+      <h3 class="card-title">Önerilen logline</h3>
+      <p style="font-family:var(--serif);font-size:18px;margin:0 0 12px">${esc(g.logline || '-')}</p>
+      <button class="btn small" data-act="ideaUseLogline" ${g.logline ? '' : 'disabled'}>Logline olarak kullan</button>
+    </section>
+    <section class="card">
+      <h3 class="card-title">Önerilen sinopsis</h3>
+      <div class="paper" style="padding:18px 20px;max-width:none;font-size:16px">${g.sinopsis ? g.sinopsis.split('\n').map(x => `<p>${esc(x)}</p>`).join('') : '<p class="muted">-</p>'}</div>
+      <div class="actions"><button class="btn small" data-act="ideaUseSynopsis" ${g.sinopsis ? '' : 'disabled'}>Sinopsis olarak kaydet</button></div>
+    </section>
+    ${isDizi(p) && g.bolumler && g.bolumler.length ? `
+    <section class="card">
+      <h3 class="card-title">Önerilen bölüm özetleri</h3>
+      ${g.sezonArki ? `<p style="margin:0 0 12px"><strong>Sezon arkı:</strong> ${esc(g.sezonArki)}</p>` : ''}
+      <ol class="flowlist">${g.bolumler.map(b => `<li><strong>Bölüm ${esc(b.no)}</strong>
+        <div style="margin-top:4px">${esc(b.ozet)}</div>
+        ${b.amac ? `<div class="muted" style="margin-top:4px"><em>Amaç:</em> ${esc(b.amac)}</div>` : ''}
+        ${b.kanca ? `<div class="muted" style="margin-top:2px"><em>Bölüm sonu:</em> ${esc(b.kanca)}</div>` : ''}</li>`).join('')}</ol>
+      <div class="actions"><button class="btn small" data-act="ideaApplyEps">Bölüm özetlerini bölümlere yaz</button>
+        <span class="muted">Eksik bölümler otomatik eklenir. Var olan özetler üzerine yazılır.</span></div>
+    </section>` : ''}` : '';
+  return `
+    <section class="card">
+      <h3 class="card-title">Aklındaki fikir</h3>
+      <p class="muted" style="margin:-8px 0 12px">Düzensiz de olsa yaz: konu, karakterler, sevdiğin sahneler, sonu. Sonra "Özetle" ile logline, sinopsis${isDizi(p) ? ' ve bölüm özetleri' : ''} çıkar.</p>
+      <div class="field"><textarea id="ideaIn" class="manu" style="min-height:240px" placeholder="Örn. Yaşlı bir balıkçı kasabaya dönen eski sevgilisinin yalan söylediğini fark ediyor...">${esc(p.idea || '')}</textarea></div>
+      <details style="margin-bottom:14px">
+        <summary class="muted" style="cursor:pointer">Ek yönerge (isteğe bağlı): bu projede tanımlar ya da üslup</summary>
+        <div class="field" style="margin-top:10px"><textarea id="guideIn" placeholder="Örn. Logline'da mutlaka mekan geçsin. Sinopsis kısa olsun, 1 paragraf. Bölüm sonları kanca olsun.">${esc(p.guideNotes || '')}</textarea></div>
+      </details>
+      <div class="actions" style="margin-top:0">
+        <button class="btn small" data-act="saveIdea">Notu kaydet</button>
+        ${ui.canDraft ? `<button class="btn primary small" data-act="ideaRun" ${busy ? 'disabled' : ''}>${busy ? 'Özetleniyor…' : 'Özetle'}</button>` : '<span class="muted">Özetleme bu görünümde kullanılamıyor.</span>'}
+      </div>
+      ${ui.idea && ui.idea.err ? `<p class="muted" style="margin:12px 0 0">${esc(ui.idea.err)}</p>` : ''}
+    </section>
+    ${genCards}
+    <section class="card">
+      <h3 class="card-title">Kayıtlı sinopsis</h3>
+      ${p.synopsis ? `<p style="white-space:pre-wrap;margin:0">${esc(p.synopsis)}</p>` : '<p class="muted" style="margin:0">Henüz sinopsis yok.</p>'}
+    </section>
+    <div class="row" style="margin-top:8px">
+      <button class="btn primary" data-act="ideaDone">Ana alana geç</button>
+      <span class="muted">Fikir aşaması burada biter. Sahneler ve bölümler ana alanda yönetilir.</span>
+    </div>`;
+}
+
+
+/* Çekim planı: sahneleri mekana göre gruplayıp çekim günlerine dağıtır. */
+function autoShootPlan(p, max){
+  const order = [], byLoc = new Map();
+  p.scenes.forEach(s => {
+    const k = s.loc || '';
+    if (!byLoc.has(k)){ byLoc.set(k, []); order.push(k); }
+    byLoc.get(k).push(s);
+  });
+  // Mekansız sahneler sona kalır, diğer sıralar korunur.
+  order.sort((a, b) => (a === '') - (b === ''));
+  let day = 1, count = 0;
+  order.flatMap(k => byLoc.get(k)).forEach(s => {
+    if (count >= max){ day++; count = 0; }
+    s.shootDay = String(day);
+    count++;
+  });
+}
+function shootView(p){
+  const max = ui.shootMax || 4;
+  const assigned = p.scenes.map((s, i) => ({s, i})).filter(x => +x.s.shootDay > 0);
+  const dayNums = [...new Set(assigned.map(x => +x.s.shootDay))].sort((a, b) => a - b);
+  const maxDay = dayNums.length ? Math.max(...dayNums) : 0;
+  const dayOpts = cur => `<option value="" ${!+cur ? 'selected' : ''}>Atanmadı</option>` +
+    Array.from({length: maxDay + 3}, (_, i) => i + 1).map(n => `<option value="${n}" ${+cur === n ? 'selected' : ''}>${n}. gün</option>`).join('');
+  const row = (s, i) => {
+    const names = (s.charIds || []).map(id => charName(p, id)).filter(Boolean).join(', ') || 'karakter yok';
+    return `<div class="cek-row">
+      <span class="muted" style="min-width:28px">${i + 1}.</span>
+      <div style="flex:1;min-width:0">
+        <div class="slug" style="font-size:12px">${esc(sluglineOf(p, s))}</div>
+        <div class="muted" style="font-size:12px">${esc(names)} · ${wordCount(s.text)} kelime</div>
+      </div>
+      <select data-sd="${s.id}" style="width:auto" aria-label="Çekim günü">${dayOpts(s.shootDay)}</select>
+    </div>`;
+  };
+  const unassigned = p.scenes.map((s, i) => ({s, i})).filter(x => !+x.s.shootDay);
+  const dayCards = dayNums.map(d => {
+    const list = assigned.filter(x => +x.s.shootDay === d);
+    const locs = [...new Set(list.map(x => locName(p, x.s.loc)).filter(Boolean))];
+    const chars = [...new Set(list.flatMap(x => (x.s.charIds || []).map(id => charName(p, id))).filter(Boolean))];
+    return `<section class="card">
+      <div class="between" style="margin-bottom:6px">
+        <h3 style="margin:0">${d}. çekim günü</h3>
+        <span class="muted">${list.length} sahne</span>
+      </div>
+      <p class="muted" style="margin:0 0 6px;font-size:13px">Mekanlar: ${esc(locs.join(', ') || '-')}</p>
+      <p class="muted" style="margin:0 0 6px;font-size:13px">Karakterler: ${esc(chars.join(', ') || '-')}</p>
+      ${list.map(x => row(x.s, x.i)).join('')}
+    </section>`;
+  }).join('');
+  return `
+    <section class="card">
+      <h3 class="card-title">Çekim planı</h3>
+      <p class="muted" style="margin:-8px 0 12px">Otomatik planlama sahneleri mekana göre gruplar ve günde en fazla seçtiğin sayıda sahne koyar. Hikâye sırası çekimde değişebilir, bu normaldir. Her sahnenin günü elle de değiştirilebilir.</p>
+      <div class="row" style="gap:10px">
+        <label class="muted" style="display:flex;align-items:center;gap:6px">Günde en fazla
+          <input id="shootMaxIn" type="number" min="1" value="${max}" style="width:76px">sahne</label>
+        <button class="btn primary small" data-act="shootAuto">Otomatik planla</button>
+        <button class="btn ghost small" data-act="shootClear">Planı temizle</button>
+      </div>
+    </section>
+    ${dayCards || '<div class="empty">Henüz plan yok. Otomatik planla ile başla ya da sahnelere elle gün ata.</div>'}
+    ${unassigned.length ? `<section class="card">
+      <h3 class="card-title">Atanmamış sahneler (${unassigned.length})</h3>
+      ${unassigned.map(x => row(x.s, x.i)).join('')}
+    </section>` : ''}`;
+}
+
+
+/* Karakter yayı zaman çizgisi: her karakterin geçtiği sahneler sırayla; sahne başına durum notu (s.arc[charId]). */
+function arcView(p){
+  if (!p.chars.length) return '<div class="empty">Önce Karakterler sekmesinden karakter ekle.</div>';
+  const blocks = p.chars.map(c => {
+    const list = p.scenes.map((s, i) => ({s, i})).filter(x => (x.s.charIds || []).includes(c.id));
+    const rows = list.length ? list.map(({s, i}) => `
+      <div class="arc-row" style="display:grid;grid-template-columns:minmax(120px,1fr) 2fr;gap:8px;align-items:center;padding:6px 0;border-top:1px solid var(--line, #eee)">
+        <div style="font-size:13px"><strong>${i + 1}.</strong> ${esc(sluglineOf(p, s))}</div>
+        <input data-arcs="${s.id}" data-cid="${c.id}" value="${esc((s.arc || {})[c.id] || '')}" placeholder="Bu sahnede durumu (örn. korkak → kararlı)" aria-label="${esc(c.name)} sahne ${i + 1} durumu">
+      </div>`).join('') : '<p class="muted" style="margin:6px 0 0;font-size:13px">Bu karakter henüz hiçbir sahnede yer almıyor. Sahne eklerken karakteri seçmeyi unutma.</p>';
+    return `
+      <section class="card" style="margin:0 0 12px">
+        <div class="between" style="margin-bottom:6px">
+          <h3 class="card-title" style="margin:0">${esc(c.name)}${c.role ? ` <span class="muted" style="font-weight:400;font-size:13px">· ${esc(c.role)}</span>` : ''}</h3>
+          <span class="muted" style="font-size:13px">${list.length} sahne</span>
+        </div>
+        <p class="muted" style="margin:0 0 6px;font-size:13px">Değişim yayı: ${c.arc ? esc(c.arc) : 'henüz yazılmadı (Karakterler sekmesinden ekleyebilirsin)'}</p>
+        ${rows}
+      </section>`;
+  }).join('');
+  return `
+    <section class="card" style="margin:0 0 12px">
+      <h3 class="card-title" style="margin:0 0 4px">Karakter yayı</h3>
+      <p class="muted" style="margin:0;font-size:13px">Her karakterin geçtiği sahneler sırayla. Sahne başına durumunu yaz; böylece değişimi sahne sahne izleyebilirsin. Notlar otomatik kaydedilir.</p>
+    </section>
+    ${blocks}`;
+}
+
+/* Storyboard: sahne metninden kadrajlar. Kurallar: ilk kadır genel çekim; uzun eylem geniş, kısa eylem orta;
+   konuşma yakın çekim; konuşmacı değişince karşı çekim. Görsel isteğe bağlı, küçültülüp saklanır. */
+function storyboardPanels(p, s){
+  const panels = [];
+  panels.push({shot: 'GENİŞ', title: sluglineOf(p, s), text: trim(s.goal) || '', bubbles: [], eksik: !trim(s.goal)});
+  const blocks = parseSceneText(p, s.text);
+  let last = null, i = 0;
+  while (i < blocks.length){
+    const b = blocks[i];
+    if (b.type === 'action'){
+      const shot = wordCount(b.text) >= 25 ? 'GENİŞ' : 'ORTA';
+      panels.push({shot, title: '', text: b.text, bubbles: []});
+      last = null; i++;
+    } else if (b.type === 'cue'){
+      const lines = [];
+      let j = i + 1;
+      while (j < blocks.length && blocks[j].type === 'dialogue'){ lines.push(blocks[j].text); j++; }
+      const karsi = last && last !== b.text;
+      panels.push({shot: (karsi ? 'KARŞI ÇEKİM' : 'YAKIN') + ' · ' + b.text, title: '', text: '', bubbles: [{who: b.text, text: lines.join(' ')}]});
+      last = b.text; i = j;
+    } else {
+      panels.push({shot: 'YAKIN', title: '', text: '', bubbles: [{who: '', text: b.text}]});
+      i++;
+    }
+  }
+  return panels;
+}
+function storyboardView(p){
+  if (!p.scenes.length) return '<div class="empty">Storyboard için önce sahne ekle.</div>';
+  const sid = (ui.sbScene && p.scenes.some(x => x.id === ui.sbScene)) ? ui.sbScene : p.scenes[0].id;
+  ui.sbScene = sid;
+  const s = p.scenes.find(x => x.id === sid);
+  const panels = storyboardPanels(p, s);
+  const imgs = s.sb || {};
+  const opts = p.scenes.map((x, i) => `<option value="${x.id}" ${x.id === sid ? 'selected' : ''}>${i + 1}. ${esc(sluglineOf(p, x))}</option>`).join('');
+  const missing = panels.filter(x => x.eksik).length;
+  return `
+    <section class="card">
+      <div class="between" style="margin-bottom:10px">
+        <h3 class="card-title" style="margin:0">Storyboard</h3>
+        <select id="sbScene" style="width:auto;max-width:100%" aria-label="Sahne seç">${opts}</select>
+      </div>
+      <p class="muted" style="margin:0;font-size:13px">${panels.length} kadraj. Görsel eklemek için kadrajın altındaki düğmeyi kullan. Görsel bilgisayarında saklanır ve küçültülür.${missing ? ' Amacı olmayan sahne: kadrajı anlamak için sahne amacını yaz.' : ''}</p>
+    </section>
+    <div class="sb-grid">
+      ${panels.map((k, idx) => `<article class="card sb-panel" style="margin:0">
+        <div class="sb-shot">${idx + 1}. ${esc(k.shot)}</div>
+        <div class="sb-frame" style="margin:8px 0">${imgs[idx] ? `<img src="${imgs[idx]}" alt="Kadraj ${idx + 1}">` : '<span class="muted" style="font-size:13px">Görsel yok</span>'}</div>
+        <div class="row" style="gap:6px">
+          <label class="btn ghost small" style="cursor:pointer">Görsel yükle<input type="file" accept="image/*" data-sbimg="${idx}" data-sid="${s.id}" style="display:none"></label>
+          ${imgs[idx] ? `<button class="btn ghost small danger" data-act="sbImgDel" data-idx="${idx}" data-sid="${s.id}">Görseli kaldır</button>` : ''}
+        </div>
+        ${k.title ? `<div class="slug" style="margin-top:8px">${esc(k.title)}</div>` : ''}
+        ${k.text ? `<p style="margin:8px 0 0">${esc(k.text)}</p>` : (k.eksik ? '<p class="muted" style="margin:8px 0 0">Amaç yazılmamış.</p>' : '')}
+        ${k.bubbles.map(b => `<div class="sb-bubble">${b.who ? `<strong>${esc(b.who)}</strong>: ` : ''}${esc(b.text)}</div>`).join('')}
+      </article>`).join('')}
+    </div>`;
+}
+function resizeImage(file, maxW){
+  return new Promise((res, rej) => {
+    const img = new Image(), url = URL.createObjectURL(file);
+    img.onload = () => {
+      const r = Math.min(1, maxW / img.width);
+      const c = document.createElement('canvas');
+      c.width = Math.round(img.width * r); c.height = Math.round(img.height * r);
+      c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+      URL.revokeObjectURL(url);
+      res(c.toDataURL('image/jpeg', 0.82));
+    };
+    img.onerror = () => rej(new Error('Görsel okunamadı.'));
+    img.src = url;
+  });
+}
+
+/* Bölümler (yalnızca dizi projelerinde) */
+function episodesView(p){
+  const form = `
+    <section class="card" id="epBox">
+      <h3 class="card-title">Yeni bölüm</h3>
+      <div class="two">
+        <div class="field"><span>Bölüm adı (isteğe bağlı)</span><input data-f="title" placeholder="Örn. Kapı"></div>
+        <div class="field"><span>Bölüm özeti</span><input data-f="note" placeholder="Bu bölümde ne oluyor?"></div>
+      </div>
+      <button class="btn primary" data-act="addEp">Bölümü ekle</button>
+    </section>`;
+  const cards = p.episodes.map((e, i) => {
+    const scs = p.scenes.filter(s => s.episodeId === e.id);
+    const words = scs.reduce((a, s) => a + wordCount(s.text), 0);
+    if (ui.editingId === e.id) return `
+      <article class="card ep" data-id="${e.id}">
+        <div class="field"><span>Bölüm adı</span><input data-f="title" value="${esc(e.title)}"></div>
+        <div class="field"><span>Bölüm özeti</span><textarea data-f="note">${esc(e.note)}</textarea></div>
+        <div class="actions">
+          <button class="btn primary small" data-act="saveEp" data-id="${e.id}">Kaydet</button>
+          <button class="btn ghost small" data-act="cancelEdit">Vazgeç</button>
+        </div>
+      </article>`;
+    return `
+    <article class="card ep" data-id="${e.id}">
+      <div class="between">
+        <div>
+          <div class="slug">Bölüm ${i + 1}</div>
+          <h3 style="margin-top:4px">${esc(e.title || 'Adsız bölüm')}</h3>
+        </div>
+        <span class="muted">${scs.length} sahne · ${words} kelime</span>
+      </div>
+      ${e.note ? `<p style="margin:8px 0 0">${esc(e.note)}</p>` : ''}
+      <div class="actions">
+        <button class="btn ghost small" data-act="epUp" data-id="${e.id}" aria-label="Yukarı taşı">Yukarı</button>
+        <button class="btn ghost small" data-act="epDown" data-id="${e.id}" aria-label="Aşağı taşı">Aşağı</button>
+        <button class="btn ghost small" data-act="epScenes" data-id="${e.id}">Sahneleri gör</button>
+        <button class="btn ghost small" data-act="editEp" data-id="${e.id}">Düzenle</button>
+        ${canDl() ? `<button class="btn ghost small" data-act="screenplay" data-ep="${e.id}">Bu bölümü indir</button>
+        <button class="btn ghost small" data-act="fountain" data-ep="${e.id}">Fountain</button>` : ''}
+        ${delBtn('delEp', e.id)}
+      </div>
+    </article>`;
+  }).join('');
+  return `
+    ${form}
+    ${cards || '<div class="empty">Henüz bölüm yok. Yukarıdaki formla ilk bölümünü ekle.</div>'}
+    <p class="muted">Sahneler bölüme bağlanır. Bölümü silersen içindeki sahneler silinmez, "Bölümsüz" olarak kalır.</p>`;
+}
+
+/* Karakterler */
+/* Karakter alanları tek yerde tanımlı: yeni form, düzenleme ve kart aynı listeden üretilir. */
+const CHAR_ROLES = ['Kahraman', 'Karşıt güç', 'Yan karakter', 'Destek'];
+const CHAR_FIELDS = [
+  {k: 'role', label: 'Rol', type: 'select', opts: CHAR_ROLES, wide: false},
+  {k: 'tag', label: 'Tek cümlelik tanım', type: 'input', ph: 'Örn. Kasabanın utangaç eczacısı', wide: false},
+  {k: 'age', label: 'Yaş ve görünüm', type: 'input', ph: 'Örn. 40li yaşlarda, yorgun, uzun boylu', wide: false},
+  {k: 'job', label: 'Meslek / günlük hayatı', type: 'input', wide: false},
+  {k: 'traits', label: 'Kişilik (virgülle 3 özellik)', type: 'input', ph: 'Örn. titiz, kırılgan, espirili', wide: false},
+  {k: 'flaw', label: 'Kusuru / zaafı', type: 'input', wide: false},
+  {k: 'want', label: 'Ne istiyor? (görünen hedef)', type: 'textarea'},
+  {k: 'need', label: 'Gerçekte neye ihtiyacı var?', type: 'textarea'},
+  {k: 'fear', label: 'Neden korkuyor?', type: 'textarea'},
+  {k: 'secret', label: 'Sırrı ne?', type: 'textarea'},
+  {k: 'past', label: 'Geçmişi (kısa)', type: 'textarea'},
+  {k: 'voice', label: 'Konuşma tarzı', type: 'textarea'},
+  {k: 'sample', label: 'Örnek bir replik', type: 'input', ph: 'Karakterin gerçekten söyleyeceği bir cümle', wide: true},
+  {k: 'arc', label: 'Değişim yayı (başta kim, sonda kim)', type: 'input', wide: true}
+];
+function charFieldHtml(f, c){
+  const v = c[f.k] || '';
+  if (f.type === 'select')
+    return `<div class="field"><span>${f.label}</span><select data-f="${f.k}"><option value="">Seç</option>${f.opts.map(o => `<option ${o === v ? 'selected' : ''}>${o}</option>`).join('')}</select></div>`;
+  if (f.type === 'textarea')
+    return `<div class="field"><span>${f.label}</span><textarea data-f="${f.k}" placeholder="${esc(f.ph || '')}">${esc(v)}</textarea></div>`;
+  return `<div class="field"><span>${f.label}</span><input data-f="${f.k}" value="${esc(v)}" placeholder="${esc(f.ph || '')}"></div>`;
+}
+function charFieldsHtml(c = {}){
+  const single = CHAR_FIELDS.filter(f => f.wide === false && f.type !== 'textarea');
+  const rest = CHAR_FIELDS.filter(f => !single.includes(f) && f.k !== 'arc' && f.k !== 'sample');
+  return `
+    <div class="field"><span>Ad</span><input data-f="name" value="${esc(c.name || '')}"></div>
+    <div class="two">${single.map(f => charFieldHtml(f, c)).join('')}</div>
+    <div class="two">${rest.map(f => charFieldHtml(f, c)).join('')}</div>
+    ${charFieldHtml(CHAR_FIELDS.find(f => f.k === 'sample'), c)}
+    ${charFieldHtml(CHAR_FIELDS.find(f => f.k === 'arc'), c)}`;
+}
+// İlişkiler: başka bir karakter seçilir, ilişkinin türü yazılır.
+function relRowHtml(p, selfId, r = {}){
+  const others = p.chars.filter(x => x.id !== selfId);
+  const opts = others.map(x => `<option value="${x.id}" ${x.id === r.to ? 'selected' : ''}>${esc(x.name)}</option>`).join('');
+  return `<div class="rel-row row" style="margin-bottom:8px">
+    <select data-rel="to" class="rel-to">${opts || '<option value="">Önce başka karakter ekle</option>'}</select>
+    <input data-rel="text" value="${esc(r.text || '')}" placeholder="İlişki: kardeşi, eski sevgilisi, rakibi" style="flex:1">
+    <button type="button" class="btn ghost small danger" data-act="relDel">Kaldır</button>
+  </div>`;
+}
+function relBoxHtml(p, selfId, rels = []){
+  return `<div class="field" data-relbox data-self="${selfId || ''}">
+    <span>İlişkiler</span>
+    <div class="rel-list">${rels.map(r => relRowHtml(p, selfId, r)).join('')}</div>
+    <div><button type="button" class="btn ghost small" data-act="relAdd">+ İlişki ekle</button></div>
+  </div>`;
+}
+// Karakter formundaki tüm değerleri okur (alanlar ve ilişkiler).
+function readChar(box){
+  const o = readFields(box);
+  o.rels = [...box.querySelectorAll('.rel-row')].map(r => ({
+    to: r.querySelector('[data-rel="to"]').value,
+    text: r.querySelector('[data-rel="text"]').value.trim()
+  })).filter(r => r.to && r.text);
+  return o;
+}
+
+
+/* Karakter bağlantıları: iki yönlü okunur. → senin bağlantın, ← karşı tarafın bağlantısı. */
+const ROLE_COLOR = {'Kahraman': 'var(--ink)', 'Karşıt güç': 'var(--red)', 'Yan karakter': 'var(--ochre)', 'Destek': 'var(--green)'};
+function connectionsOf(p, c){
+  const out = (c.rels || []).filter(r => charName(p, r.to)).map(r => ({dir: '→', other: charName(p, r.to), text: r.text, id: r.to}));
+  const inc = [];
+  p.chars.forEach(o => { if (o.id !== c.id) (o.rels || []).forEach(r => { if (r.to === c.id) inc.push({dir: '←', other: o.name, text: r.text, id: o.id}); }); });
+  return [...out, ...inc];
+}
+function relMapHtml(p){
+  if (p.chars.length < 2) return '';
+  const hasRel = p.chars.some(c => (c.rels || []).length);
+  if (!hasRel) return `<section class="card"><h3 class="card-title">İlişki haritası</h3><p class="muted" style="margin:0">Karakter kartlarından ilişki eklediğinde burada harita çıkar.</p></section>`;
+  const W = 640, H = 460, cx = W / 2, cy = H / 2, R = Math.min(W, H) / 2 - 80;
+  const pos = {};
+  p.chars.forEach((c, i) => { const a = -Math.PI / 2 + i * 2 * Math.PI / p.chars.length; pos[c.id] = {x: cx + R * Math.cos(a), y: cy + R * Math.sin(a)}; });
+  const pairs = {};
+  p.chars.forEach(c => (c.rels || []).forEach(r => {
+    if (!pos[r.to] || !r.text) return;
+    const k = [c.id, r.to].sort().join('|');
+    (pairs[k] = pairs[k] || {a: c.id, b: r.to, texts: []}).texts.push(r.text);
+  }));
+  const lines = Object.values(pairs).map(pr => {
+    const A = pos[pr.a], B = pos[pr.b], mx = (A.x + B.x) / 2, my = (A.y + B.y) / 2;
+    const t = pr.texts.join(' / ');
+    const short = t.length > 30 ? t.slice(0, 29) + '…' : t;
+    return `<line x1="${A.x}" y1="${A.y}" x2="${B.x}" y2="${B.y}" style="stroke:var(--line);stroke-width:2"/>
+      <text x="${mx}" y="${my}" text-anchor="middle" dominant-baseline="middle" style="font-size:12px;fill:var(--ink2);paint-order:stroke;stroke:var(--surface);stroke-width:5px">${esc(short)}</text>`;
+  }).join('');
+  const nodes = p.chars.map(c => {
+    const q = pos[c.id], col = ROLE_COLOR[c.role] || 'var(--grey)';
+    return `<g>
+      <circle cx="${q.x}" cy="${q.y}" r="30" style="fill:${col}"/>
+      <text x="${q.x}" y="${q.y}" text-anchor="middle" dominant-baseline="central" style="font-size:18px;font-family:var(--serif);fill:var(--surface)">${esc(upper(c.name).charAt(0))}</text>
+      <text x="${q.x}" y="${q.y + 48}" text-anchor="middle" style="font-size:13px;fill:var(--ink)">${esc(c.name)}</text>
+    </g>`;
+  }).join('');
+  const legend = Object.entries(ROLE_COLOR).map(([k, v]) => `<span class="row" style="gap:6px;font-size:12px;color:var(--ink2)"><span style="width:10px;height:10px;border-radius:50%;background:${v};display:inline-block"></span>${k}</span>`).join('');
+  return `<section class="card">
+    <div class="between" style="margin-bottom:8px"><h3 class="card-title" style="margin:0">İlişki haritası</h3><div class="row" style="gap:12px">${legend}</div></div>
+    <svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto;display:block" role="img" aria-label="Karakter ilişkileri">${lines}${nodes}</svg>
+    <p class="muted" style="margin:6px 0 0;font-size:12px">Kenardaki yazı ilişkinin türüdür. Yön için karakter kartındaki → ve ← oklarına bak.</p>
+  </section>`;
+}
+
+
+/* Taslaktan karakter ve mekan çıkarma: senaryo içe aktarmayla aynı okuma kuralları. */
+const CHAR_STOP = new Set(['INT','EXT','DIŞ','İÇ','GÜN','GECE','SABAH','AKŞAM','TV','VE','BİR','BU','ŞU','SAAT','EVET','HAYIR','YOK','DEVAM','SON','KAMERA','CUT','FADE','OFF','SES','SESİ','EKRAN','KAPI','KAPIYI','ARKA','ÖN','YAN','ÜST','ALT','ÇOK','DAHA','SONRA','ANCAK','HEMEN','BİRDEN']);
+function matchCharByName(p, name){
+  const k = lower(name), f = k.split(/\s+/)[0];
+  let c = p.chars.find(x => lower(x.name) === k);
+  if (!c) c = p.chars.find(x => lower(x.name).split(/\s+/)[0] === f);
+  return c ? c.id : null;
+}
+function buildCharImport(p, r){
+  const map = new Map();
+  const locWords = new Set();
+  r.locs.forEach(l => upper(l).split(/\s+/).forEach(w => locWords.add(w)));
+  const entry = (name) => {
+    const k = lower(name);
+    if (!map.has(k)) map.set(k, {name, speak: 0, act: 0, sample: ''});
+    return map.get(k);
+  };
+  // Konuşanlar: içe aktarma zaten sayıyor. İlk replik örnek olarak alınır.
+  r.chars.forEach(c => { const e = entry(c.name); e.speak = c.count; });
+  r.scenes.forEach(sc => (sc.text || '').split('\n').forEach(line => {
+    const m = line.match(/^([^:]{1,40}):\s*(.+)$/);
+    if (m){
+      const e = map.get(lower(m[1].trim()));
+      if (e && !e.sample) e.sample = m[2].trim().slice(0, 140);
+      return;
+    }
+    // Eylem satırlarındaki büyük harfli adlar (sahne başlıkları ve sayılar hariç)
+    (line.match(/[A-ZÇĞİÖŞÜ]{3,}/g) || []).forEach(t => {
+      if (CHAR_STOP.has(t) || locWords.has(t)) return;
+      entry(toTitle(t)).act++;
+    });
+  }));
+  const cands = [...map.values()]
+    .filter(e => e.speak > 0 || e.act >= 2)
+    .sort((a, b) => (b.speak - a.speak) || (b.act - a.act))
+    .map(e => ({name: e.name, speak: e.speak, act: e.act, sample: e.sample,
+      match: matchCharByName(ui.cimpProj || {chars: []}, e.name), checked: e.speak > 0}));
+  const locs = r.locs.map(name => ({name, exists: false}));
+  return {cands, locs, sceneCount: r.scenes.length};
+}
+function charImportView(p){
+  if (ui.cimpErr) return `<section class="card">
+    <h3 class="card-title">Taslaktan karakter çıkar</h3>
+    <p class="muted" style="margin:0 0 12px">${esc(ui.cimpErr)}</p>
+    <input type="file" id="charDocxIn" accept=".docx"></section>`;
+  if (!ui.cimp) return `<section class="card">
+    <h3 class="card-title">Taslaktan karakter ve mekan çıkar</h3>
+    <p class="muted" style="margin:-8px 0 12px">Daha önce yazdığın senaryoyu (.docx) seç. Konuşan ve eylemde geçen adları ayıklayıp projendeki karakterlerle eşleştiririm. Eşleşenler mevcut karaktere bağlanır, eşleşmeyenler yeni karakter olarak eklenir. Mekanlar da eklenir.</p>
+    <input type="file" id="charDocxIn" accept=".docx"></section>`;
+  const imp = ui.cimp;
+  const matched = imp.cands.filter(c => c.match).length;
+  const locs = imp.locs.map(l => {
+    const exists = p.locs.some(x => lower(x.name) === lower(l.name));
+    return {...l, exists};
+  });
+  return `<section class="card">
+    <h3 class="card-title">Önizleme</h3>
+    <p class="muted" style="margin:-8px 0 12px">${imp.sceneCount} sahne tarandı. ${imp.cands.length} ad bulundu, ${matched} tanesi projendeki bir karakterle eşleşti. Eklemek istemediklerini kaldır.</p>
+    <div id="charImpList" style="margin-bottom:14px">
+      ${imp.cands.map((c, i) => `<label class="cand-row">
+        <input type="checkbox" value="${i}" ${c.checked ? 'checked' : ''} style="width:auto;margin-top:4px">
+        <span style="flex:1;min-width:0">
+          <strong>${esc(c.name)}</strong>
+          <span class="muted"> · ${c.speak ? c.speak + ' konuşma' : 'eylemde geçiyor'}</span>
+          ${c.sample ? `<div class="muted" style="font-size:13px;margin-top:2px">"${esc(c.sample)}"</div>` : ''}
+        </span>
+        <span class="tag">${c.match ? 'Mevcut: ' + esc(charName(p, c.match)) : 'Yeni'}</span>
+      </label>`).join('') || '<p class="muted">Ad bulunamadı.</p>'}
+    </div>
+    <p class="muted" style="margin:0 0 6px">Mekanlar</p>
+    <div class="chips" style="margin-bottom:14px">${locs.map(l => `<span class="tag">${esc(l.name)} · ${l.exists ? 'zaten var' : 'eklenecek'}</span>`).join('') || '<span class="muted">Mekan yok</span>'}</div>
+    <div class="row">
+      <button class="btn primary" data-act="importChars">Seçilenleri ekle</button>
+      <button class="btn ghost" data-act="cancelCharImport">Vazgeç</button>
+    </div>
+  </section>`;
+}
+
+function charsView(p){
+  const form = `
+    <section class="card" id="charBox">
+      <h3 class="card-title">Yeni karakter</h3>
+      <p class="muted" style="margin:-8px 0 16px">Ne kadar çok doldurursan, taslak ve tutarlılık kontrolü o kadar iyi çalışır. Hepsini şimdi yazmak zorunda değilsin.</p>
+      ${charFieldsHtml({})}
+      ${relBoxHtml(p, '', [])}
+      <button class="btn primary" data-act="addChar">Karakteri ekle</button>
+    </section>`;
+  const cards = p.chars.map(c => {
+    if (ui.editingId === c.id) return `
+      <article class="card char" data-id="${c.id}" style="grid-column:1/-1">
+        ${charFieldsHtml(c)}
+        ${relBoxHtml(p, c.id, c.rels || [])}
+        <div class="actions">
+          <button class="btn primary small" data-act="saveChar" data-id="${c.id}">Kaydet</button>
+          <button class="btn ghost small" data-act="cancelEdit">Vazgeç</button>
+        </div>
+      </article>`;
+    const scs = p.scenes.filter(s => (s.charIds || []).includes(c.id));
+    const conns = connectionsOf(p, c);
+    const line = (k, v) => v ? `<div><dt>${k}</dt><dd>${esc(v)}</dd></div>` : '';
+    const col = ROLE_COLOR[c.role] || 'var(--grey)';
+    return `
+    <article class="card char-card">
+      <div class="row" style="justify-content:space-between;align-items:center">
+        <span class="role-badge" style="--rc:${col}">${esc(c.role || 'Rol yok')}</span>
+        <span class="muted" style="font-size:12px">${scs.length} sahne</span>
+      </div>
+      <h3 style="margin-top:10px">${esc(c.name)}</h3>
+      ${c.tag ? `<div style="font-family:var(--serif);font-style:italic;color:var(--ink2);margin-top:4px">${esc(c.tag)}</div>` : ''}
+      <div class="muted" style="margin-top:6px">${scs.length} sahne${scs.length ? ': ' + scs.map(s => esc(s.title || sluglineOf(p, s))).join(', ') : ''}</div>
+      ${c.arc ? `<div class="muted" style="margin-top:4px">${esc(c.arc)}</div>` : ''}
+      <dl>
+        ${line('Yaş/görünüm', c.age)}
+        ${line('Meslek', c.job)}
+        ${line('Kişilik', c.traits)}
+        ${line('Kusur', c.flaw)}
+        ${line('İstiyor', c.want)}
+        ${line('İhtiyacı', c.need)}
+        ${line('Korkuyor', c.fear)}
+        ${line('Sırrı', c.secret)}
+        ${line('Geçmiş', c.past)}
+        ${line('Konuşma', c.voice)}
+        ${line('Örnek replik', c.sample ? '"' + c.sample + '"' : '')}
+        ${conns.length ? `<div><dt>Bağlantılar</dt><dd>${conns.map(x => `<span class="conn">${x.dir} <strong>${esc(x.other)}</strong>: ${esc(x.text)}</span>`).join('<br>')}</dd></div>` : ''}
+      </dl>
+      <div class="actions">
+        <button class="btn ghost small" data-act="editChar" data-id="${c.id}">Düzenle</button>
+        ${delBtn('delChar', c.id)}
+      </div>
+    </article>`;
+  }).join('');
+  return charImportView(p) + form + relMapHtml(p) + (cards ? `<div class="chars">${cards}</div>` : '<div class="empty">Henüz karakter yok. Eklediğin karakterleri sahnelere bağlayabilirsin.</div>');
+}
+
+/* Mekanlar */
+function locsView(p){
+  const form = `
+    <section class="card" id="locBox">
+      <h3 class="card-title">Yeni mekan</h3>
+      <div class="field"><span>Mekanın adı</span><input data-f="name" placeholder="Örn. Mutfak, Liman, Kafe"></div>
+      <div class="field"><span>Kısa açıklama</span><textarea data-f="desc"></textarea></div>
+      <button class="btn primary" data-act="addLoc">Mekanı ekle</button>
+    </section>`;
+  const cards = p.locs.map(l => {
+    if (ui.editingId === l.id) return `
+      <article class="card loc" data-id="${l.id}" style="grid-column:1/-1">
+        <div class="field"><span>Mekanın adı</span><input data-f="name" value="${esc(l.name)}"></div>
+        <div class="field"><span>Kısa açıklama</span><textarea data-f="desc">${esc(l.desc)}</textarea></div>
+        <div class="actions">
+          <button class="btn primary small" data-act="saveLoc" data-id="${l.id}">Kaydet</button>
+          <button class="btn ghost small" data-act="cancelEdit">Vazgeç</button>
+        </div>
+      </article>`;
+    const n = p.scenes.filter(s => s.loc === l.id).length;
+    return `<article class="card">
+      <h3>${esc(l.name)}</h3>
+      <div class="muted" style="margin-top:4px">${n} sahne</div>
+      ${l.desc ? `<p>${esc(l.desc)}</p>` : ''}
+      <div class="actions">
+        <button class="btn ghost small" data-act="editLoc" data-id="${l.id}">Düzenle</button>
+        ${delBtn('delLoc', l.id)}
+      </div>
+    </article>`;
+  }).join('');
+  return form + (cards ? `<div class="chars">${cards}</div>` : '<div class="empty">Henüz mekan yok. Sahnelerin geçtiği yerleri buraya ekle.</div>');
+}
+
+/* Önemli detaylar: eşya, sır, kural gibi sahneler arası takip edilecek bilgiler */
+function detailCard(p, d){
+  if (ui.editingId === d.id){
+    const chips = p.scenes.map((s, i) => `<button type="button" class="chip" data-act="toggleChar" data-sid="${s.id}" aria-pressed="${(d.sceneIds || []).includes(s.id)}">${i+1}. ${esc(s.title || sluglineOf(p, s))}</button>`).join('');
+    return `<article class="card det" data-id="${d.id}" style="grid-column:1/-1">
+      <div class="field"><span>Ad</span><input data-f="name" value="${esc(d.name)}"></div>
+      <div class="field"><span>Açıklama</span><textarea data-f="desc">${esc(d.desc)}</textarea></div>
+      <div class="field"><span>Geçtiği sahneler</span><div class="chips">${chips || '<span class="muted">Önce sahne ekle.</span>'}</div></div>
+      <div class="actions">
+        <button class="btn primary small" data-act="saveDetail" data-id="${d.id}">Kaydet</button>
+        <button class="btn ghost small" data-act="cancelEdit">Vazgeç</button>
+      </div>
+    </article>`;
+  }
+  const list = p.scenes.map((s, i) => ({s, i})).filter(({s}) => (d.sceneIds || []).includes(s.id));
+  return `<article class="card">
+    <h3>${esc(d.name)}</h3>
+    ${d.desc ? `<p>${esc(d.desc)}</p>` : ''}
+    <div class="muted" style="margin-top:8px">${list.length ? 'Sahneler: ' + list.map(({i}) => `${i+1}. sahne`).join(', ') : 'Henüz bir sahneye bağlanmadı'}</div>
+    <div class="actions">
+      <button class="btn ghost small" data-act="editDetail" data-id="${d.id}">Düzenle</button>
+      ${delBtn('delDetail', d.id)}
+    </div>
+  </article>`;
+}
+function detailsView(p){
+  const chips = p.scenes.map((s, i) => `<button type="button" class="chip" data-act="toggleChar" data-sid="${s.id}" aria-pressed="false">${i+1}. ${esc(s.title || sluglineOf(p, s))}</button>`).join('');
+  const form = `
+    <section class="card" id="detBox">
+      <h3 class="card-title">Yeni detay</h3>
+      <div class="field"><span>Detayın adı</span><input data-f="name" placeholder="Örn. Kırmızı anahtar, mektup, yara izi"></div>
+      <div class="field"><span>Ne işe yarıyor, neden önemli?</span><textarea data-f="desc"></textarea></div>
+      <div class="field"><span>Geçtiği sahneler</span><div class="chips">${chips || '<span class="muted">Önce sahne ekle.</span>'}</div></div>
+      <button class="btn primary" data-act="addDetail">Detayı ekle</button>
+    </section>`;
+  const cards = p.details.map(d => detailCard(p, d)).join('');
+  return form + (cards ? `<div class="chars">${cards}</div>` : '<div class="empty">Henüz takip edilen detay yok. Bir eşya ya da sır eklediğinde hangi sahnelerde geçtiğini burada izleyebilirsin.</div>');
+}
+
+/* Tutarlılık */
+function consistencyView(p){
+  const issues = checkConsistency(p);
+  return `<section class="card">
+    <h3 class="card-title">Tutarlılık kontrolü</h3>
+    ${issues.length
+      ? `<ul class="issues">${issues.map(t => `<li>${esc(t)}</li>`).join('')}</ul>`
+      : '<p class="muted" style="margin:0">Bir sorun bulunmadı. Bu kontroller yalnızca otomatik kurallara bakar, son kararı sen verirsin.</p>'}
+  </section>`;
+}
+
+function flowView(p){
+  if (!p.scenes.length) return '<div class="empty">Sahne ekledikçe hikâyenin akışı burada görünecek.</div>';
+  const done = p.scenes.filter(s => s.status !== 'taslak').length;
+  return `
+    <section class="card">
+      <div class="stat-v">${done} / ${p.scenes.length}</div>
+      <div class="muted">sahne yazıldı ya da revize edildi</div>
+      <div class="bar"><span style="width:${(done / p.scenes.length) * 100}%"></span></div>
+    </section>
+    <section class="card">
+      <ol class="flowlist">
+        ${p.scenes.map(s => `<li>${esc(s.title || sluglineOf(p, s))}${(s.from || s.to) ? `<div class="muted">${esc(s.from)} → ${esc(s.to)}</div>` : ''}</li>`).join('')}
+      </ol>
+    </section>`;
+}
+
+function makeLoglines(lg){
+  const c = lg.char || 'Ana karakter', w = lg.want, o = lg.obst;
+  return [
+    `${c}, ${w} hayaliyle yola çıkar; ama ${o} her adımda onu zorlar.`,
+    `${lg.genre} türünde, ${c} için ${w} ile ${o} arasında sıkışıp kalan bir hikâye.`,
+    `${c} her şeyini ${w} uğruna riske atar. Ama ${o}, geri dönüşü olmayan bir seçim yapmasını zorunlu kılar.`
+  ];
+}
+function loglineView(p){
+  const lg = ui.lg;
+  return `
+    <section class="card">
+      <h3 class="card-title">Logline taslağı üret</h3>
+      <p class="muted" style="margin:-8px 0 16px">Dört alanı doldur. Taslakları kendi cümlenle düzeltip kaydet.</p>
+      <div class="two">
+        <div class="field"><span>Tür</span><select id="lgGenre">${GENRES.map(g => `<option ${g === lg.genre ? 'selected' : ''}>${g}</option>`).join('')}</select></div>
+        <div class="field"><span>Ana karakter</span><input id="lgChar" list="charNames" value="${esc(lg.char)}"></div>
+        <div class="field"><span>Ne istiyor?</span><input id="lgWant" value="${esc(lg.want)}"></div>
+        <div class="field"><span>Önündeki engel</span><input id="lgObst" value="${esc(lg.obst)}"></div>
+      </div>
+      <button class="btn primary" data-act="genLog">Taslak üret</button>
+      ${ui.cands.map((c, i) => `
+        <div class="cand">
+          <p>${esc(c)}</p>
+          <button class="btn small" data-act="saveLog" data-i="${i}">Kaydet</button>
+        </div>`).join('')}
+    </section>
+    <section class="card">
+      <h3 class="card-title">Kayıtlı loglineler</h3>
+      ${p.loglines.length ? p.loglines.map((l, i) => `
+        <div class="saved">
+          <p>${esc(l)}</p>
+          <button class="btn ghost small" data-act="mainLog" data-i="${i}">Ana logline yap</button>
+          <button class="btn ghost small danger" data-act="delLog" data-i="${i}">Sil</button>
+        </div>`).join('') : '<p class="muted">Henüz kayıtlı logline yok.</p>'}
+    </section>`;
+}
+
+function goalView(p){
+  const today = (p.log || {})[dkey()] || 0;
+  const total = Object.values(p.log || {}).reduce((a, b) => a + b, 0);
+  const pct = Math.min(100, Math.round(today / p.goal * 100));
+  return `
+    <div class="stats">
+      <section class="card">
+        <div class="muted">Bugün</div>
+        <div class="stat-v">${today} <span class="muted">/ ${p.goal}</span></div>
+        <div class="bar"><span style="width:${pct}%"></span></div>
+      </section>
+      <section class="card">
+        <div class="muted">Seri</div>
+        <div class="stat-v">${streak(p)} gün</div>
+        <div class="muted" style="margin-top:12px">Hedefi üst üste tuttuğun gün sayısı</div>
+      </section>
+      <section class="card">
+        <div class="muted">Toplam</div>
+        <div class="stat-v">${total}</div>
+        <div class="muted" style="margin-top:12px">Bu projede yazdığın kelime</div>
+      </section>
+    </div>
+    <section class="card">
+      <h3 class="card-title">Elle kelime ekle</h3>
+      <p class="muted" style="margin:-8px 0 12px">Sahne metinlerine yazdığın kelimeler otomatik sayılır. Bu alan yalnızca metin dışında yazdıkların içindir.</p>
+      <div class="inline">
+        <input id="wordsIn" type="number" min="1" placeholder="Kelime sayısı">
+        <button class="btn" data-act="addWords">Ekle</button>
+      </div>
+    </section>
+    <section class="card">
+      <h3 class="card-title">Günlük hedef</h3>
+      <div class="inline">
+        <input id="goalIn" type="number" min="1" value="${p.goal}">
+        <button class="btn" data-act="setGoal">Kaydet</button>
+      </div>
+    </section>`;
+}
+
+/* Çıktılar */
+function buildPortfolio(p){
+  const body = `
+    <h1>${esc(p.title)}</h1>
+    <p><em>${esc(p.logline)}</em></p>
+    ${p.chars.length ? '<h2>Karakterler</h2>' + p.chars.map(c => `<h3>${esc(c.name)}</h3><p>${esc(c.want)}</p>`).join('') : ''}
+    ${p.scenes.length ? '<h2>Sahneler</h2>' + p.scenes.map((s, i) => `<h3>${i+1}. ${esc(s.title || sluglineOf(p, s))}</h3><p>${esc(s.goal)}</p>`).join('') : ''}`;
+  return `<!DOCTYPE html><html lang="tr"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>${esc(p.title)}</title>
+<style>body{font-family:Georgia,serif;max-width:720px;margin:40px auto;padding:0 20px;line-height:1.65;color:#1f1c18}</style>
+</head><body>${body}</body></html>`;
+}
+
+const CT_XML = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/></Types>`;
+const RELS_XML = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/></Relationships>`;
+const CRC_TABLE = (() => { const t = new Uint32Array(256); for (let n = 0; n < 256; n++){ let c = n; for (let k = 0; k < 8; k++) c = c & 1 ? 0xEDB88320 ^ (c >>> 1) : c >>> 1; t[n] = c >>> 0; } return t; })();
+function crc32(bytes){ let crc = 0xFFFFFFFF; for (let i = 0; i < bytes.length; i++) crc = CRC_TABLE[(crc ^ bytes[i]) & 0xFF] ^ (crc >>> 8); return (crc ^ 0xFFFFFFFF) >>> 0; }
+function makeZip(files){
+  const chunks = [], central = []; let offset = 0;
+  const enc = new TextEncoder();
+  files.forEach(f => {
+    const name = enc.encode(f.name), data = f.data, crc = crc32(data);
+    const lh = new DataView(new ArrayBuffer(30));
+    lh.setUint32(0, 0x04034b50, true); lh.setUint16(4, 20, true); lh.setUint16(12, 0x21, true);
+    lh.setUint32(14, crc, true); lh.setUint32(18, data.length, true); lh.setUint32(22, data.length, true);
+    lh.setUint16(26, name.length, true);
+    chunks.push(new Uint8Array(lh.buffer), name, data);
+    const ch = new DataView(new ArrayBuffer(46));
+    ch.setUint32(0, 0x02014b50, true); ch.setUint16(4, 20, true); ch.setUint16(6, 20, true); ch.setUint16(14, 0x21, true);
+    ch.setUint32(16, crc, true); ch.setUint32(20, data.length, true); ch.setUint32(24, data.length, true);
+    ch.setUint16(28, name.length, true); ch.setUint32(42, offset, true);
+    central.push(new Uint8Array(ch.buffer), name);
+    offset += 30 + name.length + data.length;
+  });
+  const cdSize = central.reduce((a, c) => a + c.length, 0);
+  const end = new DataView(new ArrayBuffer(22));
+  end.setUint32(0, 0x06054b50, true); end.setUint16(8, files.length, true); end.setUint16(10, files.length, true);
+  end.setUint32(12, cdSize, true); end.setUint32(16, offset, true);
+  return new Blob([...chunks, ...central, new Uint8Array(end.buffer)],
+    {type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'});
+}
+function xmlRun(text, o = {}){
+  return `<w:r><w:rPr><w:rFonts w:ascii="Courier New" w:hAnsi="Courier New" w:cs="Courier New"/>${o.b ? '<w:b/>' : ''}${o.i ? '<w:i/>' : ''}<w:sz w:val="${o.sz || 24}"/></w:rPr><w:t xml:space="preserve">${esc(text)}</w:t></w:r>`;
+}
+function xmlPara(text, o = {}){
+  const kn = (o.keepNext ? '<w:keepNext/>' : '') + (o.pageBreak ? '<w:pageBreakBefore/>' : '');
+  const sp =`<w:spacing w:before="${o.before || 0}" w:after="${o.after ?? 120}"/>`;
+  const ind = (o.il != null || o.ir != null) ? `<w:ind w:left="${o.il || 0}" w:right="${o.ir || 0}"/>` : '';
+  const jc = o.jc ? `<w:jc w:val="${o.jc}"/>` : (o.center ? '<w:jc w:val="center"/>' : '');
+  const runs = String(text ?? '').split('\n').map((l, i) => (i ? '<w:r><w:br/></w:r>' : '') + xmlRun(l, o)).join('');
+  return `<w:p><w:pPr>${kn}${sp}${ind}${jc}</w:pPr>${runs}</w:p>`;
+}
+// Biçim: Amerikan (karakter adı ve diyalog sağa kayık, eylem sola yaslı) ya da Fransız (karakter adı
+// ve diyalog ortalı, eylem iki yana yaslı).
+// Dizide sahneler bölüm bölüm gruplanır. epScope verilmezse tüm senaryo, verilirse yalnızca o bölüm.
+// Film ya da tek grup durumunda ek başlık ve sayfa sonu yoktur.
+function scriptGroups(p, epScope){
+  if (!isDizi(p)) return [{ep: null, scenes: p.scenes}];
+  const eps = epScope === undefined ? p.episodes : p.episodes.filter(e => e.id === epScope);
+  const groups = eps.map(e => ({ep: e, scenes: p.scenes.filter(s => s.episodeId === e.id)}));
+  if (epScope === undefined){
+    const rest = p.scenes.filter(s => epIndex(p, s.episodeId) < 0);
+    if (rest.length) groups.push({ep: null, scenes: rest});
+  }
+  return groups;
+}
+function buildScreenplayDocx(p, epScope){
+  const fr = p.format === 'fransiz';
+  const m = fr ? {l: 1417, r: 1417} : {l: 2160, r: 1440};
+  let body = xmlPara(upper(p.title || 'Senaryo'), {b: true, center: true, sz: 32, after: 120});
+  if (p.logline) body += xmlPara(p.logline, {i: true, center: true, after: 480});
+  let n = 0, first = true;
+  scriptGroups(p, epScope).forEach(g => {
+    if (isDizi(p)){
+      const head = g.ep ? `BÖLÜM ${epIndex(p, g.ep.id) + 1}${g.ep.title ? ' - ' + upper(g.ep.title) : ''}` : 'BÖLÜMSÜZ';
+      body += xmlPara(head, {b: true, center: true, sz: 28, before: 0, after: 360, pageBreak: !first});
+      if (!g.scenes.length) body += xmlPara('Bu bölümde henüz sahne yok.', {after: 240});
+    }
+    first = false;
+    g.scenes.forEach(s => {
+      n++;
+      body += xmlPara(`${n}. ${sluglineOf(p, s)}`, {b: true, before: 360, after: 240, keepNext: true});
+      const blocks = parseSceneText(p, s.text);
+      if (!blocks.length) body += xmlPara('(metin yok)', {after: 240});
+      blocks.forEach(b => {
+        if (b.type === 'action') body += xmlPara(b.text, {after: 240, jc: fr ? 'both' : 'left'});
+        else if (b.type === 'cue') body += xmlPara(upper(b.text), fr
+          ? {jc: 'center', before: 200, after: 0, keepNext: true}
+          : {il: 3168, before: 200, after: 0, keepNext: true});
+        else body += xmlPara(b.text, fr
+          ? {jc: 'center', il: 1134, ir: 1134, after: 240}
+          : {il: 1440, ir: 2160, after: 240});
+      });
+    });
+  });
+  if (!p.scenes.length) body += xmlPara('Henüz sahne yok.');
+  const doc = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:body>${body}<w:sectPr><w:pgSz w:w="11906" w:h="16838"/><w:pgMar w:top="1440" w:right="${m.r}" w:bottom="1440" w:left="${m.l}" w:header="708" w:footer="708" w:gutter="0"/></w:sectPr></w:body></w:document>`;
+  const enc = new TextEncoder();
+  return makeZip([
+    {name: '[Content_Types].xml', data: enc.encode(CT_XML)},
+    {name: '_rels/.rels', data: enc.encode(RELS_XML)},
+    {name: 'word/document.xml', data: enc.encode(doc)}
+  ]);
+}
+
+/* Fountain (.fountain) dışa aktarımı: düz metin, Final Draft, Highland, Fade In vb. programlarla açılır. */
+function fountainEsc(text){
+  return String(text).split('\n').map(line => /^[!@>~=#.\\]/.test(line) ? '\\' + line : line).join('\n');
+}
+function buildFountain(p, epScope){
+  const out = [];
+  out.push('Title: ' + (p.title || 'Senaryo'));
+  if (p.logline) out.push('Notes: ' + p.logline.replace(/\s+/g, ' ').trim());
+  out.push('Draft date: ' + new Date().toLocaleDateString('tr-TR'));
+  out.push('');
+  out.push('');
+  let n = 0;
+  scriptGroups(p, epScope).forEach(g => {
+    if (isDizi(p)){
+      const head = g.ep ? `BÖLÜM ${epIndex(p, g.ep.id) + 1}${g.ep.title ? ' - ' + upper(g.ep.title) : ''}` : 'BÖLÜMSÜZ';
+      out.push('# ' + head);
+      out.push('');
+    }
+    g.scenes.forEach(s => {
+      n++;
+      out.push('.' + upper(sluglineOf(p, s)) + ' #' + n + '#');
+      out.push('');
+      const blocks = parseSceneText(p, s.text);
+      if (!blocks.length) { out.push('(metin yok)'); out.push(''); }
+      blocks.forEach((b, i) => {
+        if (b.type === 'action'){
+          out.push(fountainEsc(b.text)); out.push('');
+        } else if (b.type === 'cue'){
+          out.push(upper(b.text)); // karakter adı: büyük harf, hemen altında diyalog
+          const nextC = blocks[i + 1];
+          if (!nextC || nextC.type !== 'dialogue') out.push(''); // diyaloğu olmayan karakter satırı
+        } else {
+          out.push(fountainEsc(b.text));
+          const next = blocks[i + 1];
+          if (!next || next.type !== 'dialogue') out.push('');
+        }
+      });
+    });
+  });
+  if (!p.scenes.length) out.push('Henüz sahne yok.');
+  return out.join('\n').replace(/\n{3,}/g, '\n\n') + '\n';
+}
+
+function portfolioView(p){
+  return `
+    <div class="paper">
+      <h2>${esc(p.title)}</h2>
+      <p><em>${esc(p.logline || 'Logline henüz yok')}</em></p>
+      <h3>Karakterler</h3>
+      ${p.chars.length ? p.chars.map(c => `<p><strong>${esc(c.name)}</strong>${c.want ? ' — ' + esc(c.want) : ''}</p>`).join('') : '<p class="muted">Karakter yok.</p>'}
+      <h3>Sahneler</h3>
+      ${p.scenes.length ? p.scenes.map((s, i) => `<p><strong>${i+1}. ${esc(s.title || sluglineOf(p, s))}</strong><br>${esc(s.goal)}</p>`).join('') : '<p class="muted">Sahne yok.</p>'}
+    </div>
+    ${canDl() ? `<div class="row" style="margin-top:16px">
+      <button class="btn primary" data-act="portfolio">Portfolyo sayfasını indir</button>
+      <span class="muted">Tek başına açılan bir HTML sayfası.</span>
+    </div>` : ''}`;
+}
+
+function renderSidebar(){
+  const cp = cur();
+  const ub = document.getElementById('undoBtn');
+  if (ub) ub.disabled = HIST.length === 0;
+  document.getElementById('projectList').innerHTML =
+    state.projects.map(p => {
+      const current = p.id === ui.projectId;
+      let eps = '';
+      if (current && isDizi(p)){
+        const act = activeEpId(p);
+        const items = (p.episodes || []).map((e, i) => `<button class="ep-link" data-ep="${e.id}" aria-current="${act === e.id}">
+              <span class="ep-no">${i + 1}</span>${esc(e.title || 'Adsız bölüm')}</button>`).join('');
+        eps = `<div class="ep-side" aria-label="Bölümler">
+          ${items || '<span class="muted" style="padding:6px 8px;display:block">Henüz bölüm yok</span>'}
+          <button class="ep-link" data-ep="__manage">+ Bölümleri yönet</button>
+        </div>`;
+      }
+      return `<button class="proj-link" data-id="${p.id}" aria-current="${current}">${esc(p.title)}</button>${eps}`;
+    }).join('')
+    || '<div class="muted" style="padding:0 8px">Henüz proje yok.</div>';
+}
+
+/* Odak modu: tek sahneyi tam ekran, dikkat dağıtmadan yazma. Yazarken kayıt gecikmeli yapılır (geri al geçmişini şişirmemek için). */
+let focusLayer = null, focusTimer = null;
+function focusHtml(p, s, idx){
+  return `<div class="focus-top">
+      <span class="muted">Sahne ${idx + 1}</span>
+      <span class="focus-slug">${esc(sluglineOf(p, s))}</span>
+      <span class="muted" id="focusCount">${wordCount(s.text)} kelime</span>
+      <button class="btn ghost small" data-act="focusClose">Kapat (Esc)</button>
+    </div>
+    <div class="focus-body">
+      ${s.goal ? `<div class="muted" style="font-size:14px">Amaç: ${esc(s.goal)}</div>` : ''}
+      <textarea id="focusText" aria-label="Sahne metni" placeholder="Eylem satırlarını yaz. Diyalog için karakter adını ayrı satıra, replikleri altına yaz.">${esc(s.text || '')}</textarea>
+    </div>`;
+}
+function focusFlush(){
+  if (focusTimer){ clearTimeout(focusTimer); focusTimer = null; save(); }
+}
+function closeFocus(){
+  focusFlush();
+  ui.focusId = null;
+  if (focusLayer){ focusLayer.remove(); focusLayer = null; }
+  render();
+}
+function renderFocus(){
+  const p = cur();
+  const s = p && ui.focusId ? p.scenes.find(x => x.id === ui.focusId) : null;
+  if (!s){ if (focusLayer){ focusLayer.remove(); focusLayer = null; } return; }
+  if (!focusLayer){
+    focusLayer = document.createElement('div');
+    focusLayer.id = 'focusLayer';
+    focusLayer.setAttribute('role', 'dialog');
+    focusLayer.setAttribute('aria-label', 'Odak modu');
+    document.body.appendChild(focusLayer);
+    focusLayer.addEventListener('input', e => {
+      if (e.target.id !== 'focusText') return;
+      const sc = cur().scenes.find(x => x.id === ui.focusId);
+      if (!sc) return;
+      sc.text = e.target.value;
+      creditWords(cur(), sc);
+      const c = document.getElementById('focusCount');
+      if (c) c.textContent = wordCount(sc.text) + ' kelime';
+      clearTimeout(focusTimer);
+      focusTimer = setTimeout(() => { focusTimer = null; save(); }, 800);
+    });
+    focusLayer.addEventListener('click', e => {
+      if (e.target.closest && e.target.closest('[data-act="focusClose"]')) closeFocus();
+    });
+  }
+  const idx = cur().scenes.indexOf(s);
+  focusLayer.innerHTML = focusHtml(cur(), s, idx);
+  const ta = focusLayer.querySelector('#focusText');
+  if (ta) ta.focus();
+}
+
+function render(){
+  renderFocus();
+  renderSidebar();
+  const app = document.getElementById('app');
+  const p = cur();
+  if (!p){
+    if (ui.intake){ app.innerHTML = ideaIntakeView(); return; }
+    app.innerHTML = `<div style="max-width:620px;margin:56px auto 0">
+      <h2 style="margin-bottom:8px">Hoş geldin</h2>
+      <p class="muted" style="margin:0 0 24px">Yeni bir projeye nereden başlayacağını seç.</p>
+      <div class="start-grid">
+        <button class="start-card" data-act="startIdea">
+          <span class="start-t">Bir fikrim var</span>
+          <span class="muted">Aklındakini düzensiz de olsa anlat. Logline, sinopsis ve bölüm özetlerini birlikte çıkaralım.</span>
+        </button>
+        <button class="start-card" data-act="startScript">
+          <span class="start-t">Bir senaryom var</span>
+          <span class="muted">Yazdığın senaryoyu içe aktar ya da sahneleri tek tek ekle. Karakter ve mekanları otomatik ayırırım.</span>
+        </button>
+      </div>
+    </div>`;
+    return;
+  }
+  p.goal = p.goal || 500;
+  p.scenes = p.scenes || [];
+  p.chars = p.chars || [];
+  p.loglines = p.loglines || [];
+  p.locs = p.locs || [];
+  p.details = p.details || [];
+  p.episodes = p.episodes || [];
+  p.kind = p.kind === 'dizi' ? 'dizi' : 'film';
+  // Film projesinde ya da silinmiş bir bölüm seçiliyse süzgeç ve sekme sıfırlanır.
+  if (!isDizi(p) && ui.tab === 'bolumler') ui.tab = 'sahneler';
+  if (ui.epFilter !== 'tumu' && ui.epFilter !== 'none' && epIndex(p, ui.epFilter) < 0) ui.epFilter = 'tumu';
+  if (!isDizi(p)) ui.epFilter = 'tumu';
+
+  // Fikir aşamasındaki proje: yalnızca fikir ekranı, sekmeler yok.
+  if (p.stage === 'fikir'){
+    app.innerHTML = `<header class="head">
+      <div><div class="muted" style="margin-bottom:6px">Fikir aşaması · ${isDizi(p) ? 'Dizi' : 'Film'}</div><h1>${esc(p.title)}</h1></div>
+      <div class="row">${delBtn('delProj', p.id, 'Projeyi sil')}</div>
+    </header>` + ideaView(p);
+    return;
+  }
+
+  const views = {sahneler: scenesView, bolumler: episodesView, karakterler: charsView, yay: arcView, cekim: shootView, storyboard: storyboardView, mekanlar: locsView, detaylar: detailsView, kontrol: consistencyView, akis: flowView, logline: loglineView, hedef: goalView, portfolyo: portfolioView};
+  const issueCount = checkConsistency(p).length;
+  const counts = {sahneler: p.scenes.length, bolumler: p.episodes.length, karakterler: p.chars.length, mekanlar: p.locs.length, detaylar: p.details.length, kontrol: issueCount, logline: p.loglines.length};
+
+  app.innerHTML = `
+    <header class="head">
+      <div>
+        <div class="muted" style="margin-bottom:6px">${isDizi(p) ? 'Dizi' : 'Film'}${isDizi(p) ? ` · ${p.episodes.length} bölüm` : ''}</div>
+        <h1>${esc(p.title)}</h1>
+        <p class="logline">${esc(p.logline || 'Henüz bir logline yazmadın.')}</p>
+      </div>
+      <div class="row">
+        <button class="btn ghost small" data-act="editProj">Düzenle</button>
+        ${canDl() ? `<button class="btn ghost small" data-act="screenplay">Senaryo olarak indir</button>
+        <button class="btn ghost small" data-act="fountain" title="Final Draft, Highland, Fade In gibi programlarla açılan düz metin biçimi">Fountain indir</button>
+        <button class="btn ghost small" data-act="export">Yedek al</button>` : ''}
+        ${delBtn('delProj', p.id, 'Projeyi sil')}
+      </div>
+    </header>
+    <nav class="tabs" role="tablist">
+      ${Object.entries(TABS).filter(([k]) => k !== 'bolumler' || isDizi(p)).map(([k, v]) => `
+        <button role="tab" aria-selected="${ui.tab === k}" data-act="tab" data-tab="${k}">${v}${k in counts && counts[k] ? `<span class="cnt">${counts[k]}</span>` : ''}</button>`).join('')}
+    </nav>
+    <datalist id="charNames">${p.chars.map(c => `<option value="${esc(c.name)}">`).join('')}</datalist>
+    <div role="tabpanel">${views[ui.tab](p)}</div>`;
+
+  if (ui.tab === 'sahneler') renderSceneList(p);
+}
+
+function openProjDialog(p){
+  dlgEditId = p ? p.id : null;
+  document.getElementById('projDlgTitle').textContent = p ? 'Projeyi düzenle' : 'Yeni proje';
+  document.getElementById('projTitleIn').value = p ? p.title : '';
+  document.getElementById('projLoglineIn').value = p ? (p.logline || '') : '';
+  document.getElementById('projKindIn').value = p && p.kind === 'dizi' ? 'dizi' : 'film';
+  document.getElementById('projFormatIn').value = p ? (p.format || 'amerikan') : 'amerikan';
+  document.getElementById('projDlg').showModal();
+  document.getElementById('projTitleIn').focus();
+}
+
+/* Yetenekler: indirme ve örnekleme yalnızca yayınlanmış sayfada kullanılabilir. */
+let dl = null;
+const LOCAL_APP = location.protocol === 'file:' || window.SENARYO_DESKTOP === true;
+if (window.claude && window.claude.use){
+  window.claude.use('downloads').then(ns => { dl = ns; if (dl) render(); }).catch(() => {});
+  window.claude.use('sample').then(ns => { ui.canDraft = !!ns; if (ui.canDraft) render(); }).catch(() => {});
+}
+
+document.getElementById('newProj').onclick = () => openProjDialog(null);
+document.getElementById('undoBtn').onclick = () => undo();
+// Ctrl+Z: metin alanlarının içinde tarayıcının kendi geri almasına bırakılır.
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape' && ui.focusId){ closeFocus(); return; }
+  if ((e.ctrlKey || e.metaKey) && !e.shiftKey && lower(e.key) === 'z'){
+    const t = e.target;
+    if (t && (t.tagName === 'TEXTAREA' || t.tagName === 'INPUT' || t.isContentEditable)) return;
+    if (undo()) e.preventDefault();
+  }
+});
+document.getElementById('projCancel').onclick = () => document.getElementById('projDlg').close();
+document.getElementById('projForm').addEventListener('submit', e => {
+  e.preventDefault();
+  const t = document.getElementById('projTitleIn').value.trim();
+  const l = document.getElementById('projLoglineIn').value.trim();
+  if (!t) return;
+  const fmt = document.getElementById('projFormatIn').value;
+  const kind = document.getElementById('projKindIn').value === 'dizi' ? 'dizi' : 'film';
+  if (dlgEditId){
+    const p = state.projects.find(x => x.id === dlgEditId);
+    p.title = t; p.logline = l; p.format = fmt; p.kind = kind; p.episodes = p.episodes || [];
+  } else {
+    const p = {id: uid(), title: t, logline: l, format: fmt, kind, goal: 500, log: {}, scenes: [], chars: [], loglines: [], locs: [], details: [], episodes: []};
+    state.projects.push(p);
+    ui.projectId = p.id; ui.tab = 'sahneler'; ui.q = ''; ui.filter = 'tumu';
+  }
+  ui.epFilter = 'tumu';
+  ui.editingId = null; ui.cands = []; ui.draft = null;
+  document.getElementById('projDlg').close();
+  save(); render();
+});
+
+document.getElementById('projectList').addEventListener('click', e => {
+  const eb = e.target.closest('.ep-link');
+  if (eb){
+    // Bölüme tıklamak o bölümün sahnelerini açar, böylece yazılan sahnenin bölümü hep görünür.
+    if (eb.dataset.ep === '__manage'){ ui.tab = 'bolumler'; ui.epFilter = 'tumu'; }
+    else { ui.epFilter = eb.dataset.ep; ui.tab = 'sahneler'; }
+    ui.editingId = null; ui.draft = null; ui.armed = null;
+    render();
+    return;
+  }
+  const b = e.target.closest('.proj-link');
+  if (!b) return;
+  ui.projectId = b.dataset.id; ui.intake = false; ui.editingId = null; ui.cands = []; ui.draft = null; ui.epFilter = 'tumu';
+  render();
+});
+
+const appEl = document.getElementById('app');
+appEl.addEventListener('input', e => {
+  if (e.target.id === 'sceneSearch'){
+    ui.q = e.target.value;
+    renderSceneList(cur());
+  }
+});
+appEl.addEventListener('change', e => {
+  if (e.target.id === 'sbScene'){ ui.sbScene = e.target.value; render(); return; }
+  if (e.target.dataset && e.target.dataset.sbimg !== undefined){
+    const f = e.target.files[0];
+    if (!f) return;
+    const sc = cur().scenes.find(x => x.id === e.target.dataset.sid);
+    const idx = e.target.dataset.sbimg;
+    resizeImage(f, 640).then(url => { sc.sb = sc.sb || {}; sc.sb[idx] = url; save(); render(); })
+      .catch(err => { alert(err.message); });
+    return;
+  }
+  if (e.target.dataset && e.target.dataset.arcs !== undefined){
+    const s = cur().scenes.find(x => x.id === e.target.dataset.arcs);
+    if (s){ s.arc = s.arc || {}; s.arc[e.target.dataset.cid] = e.target.value.trim(); save(); }
+    return;
+  }
+  if (e.target.dataset && e.target.dataset.sd){
+    const s = cur().scenes.find(x => x.id === e.target.dataset.sd);
+    if (s){ s.shootDay = e.target.value; save(); render(); }
+    return;
+  }
+  if (e.target.id === 'charDocxIn'){
+    const f = e.target.files[0];
+    if (!f) return;
+    ui.cimp = null; ui.cimpErr = null;
+    analyzeDocx(f).then(r => {
+      if (!r.scenes.length) ui.cimpErr = 'Bu dosyada sahne başlığı bulunamadı. Sahne başlıkları "İÇ." ya da "DIŞ." ile başlamalı.';
+      else { ui.cimpProj = cur(); ui.cimp = buildCharImport(cur(), r); }
+      render();
+    }).catch(err => { ui.cimpErr = err.message || 'Dosya okunamadı.'; render(); });
+    return;
+  }
+  if (e.target.id === 'docxIn'){
+    const f = e.target.files[0];
+    if (!f) return;
+    ui.imp = null; ui.impErr = null;
+    analyzeDocx(f).then(r => {
+      if (!r.scenes.length) ui.impErr = `Sahne başlığı bulunamadı. Dosyada ${r.paraCount} paragraf okundu. Okunan ilk satırlar: ${r.sample.join(' | ') || '(boş)'}. Sahne başlıkları "İÇ." ya da "DIŞ." ile başlamalı. Bu satırlar senin metnine benzemiyorsa örnek satırları bana gönder.`;
+      else ui.imp = r;
+      render();
+    }).catch(err => { ui.impErr = err.message || 'Dosya okunamadı.'; render(); });
+    return;
+  }
+  if (e.target.id === 'sceneFilter'){
+    ui.filter = e.target.value;
+    renderSceneList(cur());
+  }
+});
+
+appEl.addEventListener('click', async e => {
+  const b = e.target.closest('[data-act]');
+  if (!b) return;
+  const act = b.dataset.act, id = b.dataset.id, p = cur();
+  // Fikir metni, başka bir düğmeye basılmadan önce kaybolmasın.
+  const ideaEl = document.getElementById('ideaIn');
+  if (ideaEl && p) p.idea = ideaEl.value;
+  const guideEl = document.getElementById('guideIn');
+  if (guideEl && p) p.guideNotes = guideEl.value;
+  // Silme onayı yalnızca hemen ardından gelen silme tıklamasında geçerli kalır.
+  if (!act.startsWith('del')) ui.armed = null;
+
+  // Çip seçimi sayfayı yenilemeden çalışır, böylece formdaki yazılar silinmez.
+  if (act === 'toggleChar'){
+    b.setAttribute('aria-pressed', b.getAttribute('aria-pressed') === 'true' ? 'false' : 'true');
+    return;
+  }
+  // Bölüm süzgeci sayfayı yenilemeden çalışır, yeni sahne formundaki yazılar kalır.
+  if (act === 'epFilter'){
+    ui.epFilter = b.dataset.ep;
+    b.parentNode.querySelectorAll('[data-act="epFilter"]').forEach(x => x.setAttribute('aria-pressed', x === b ? 'true' : 'false'));
+    const sel = document.querySelector('#newBox [data-f="episodeId"]');
+    if (sel) sel.value = ui.epFilter !== 'tumu' && ui.epFilter !== 'none' ? ui.epFilter : '';
+    renderSceneList(p);
+    return;
+  }
+  if (act === 'relAdd'){
+    const box = b.closest('[data-relbox]');
+    box.querySelector('.rel-list').insertAdjacentHTML('beforeend', relRowHtml(p, box.dataset.self, {}));
+    return;
+  }
+  if (act === 'relDel'){ b.closest('.rel-row').remove(); return; }
+  if (act === 'dropDraft'){ ui.draft = null; render(); return; }
+  if (act === 'useDraft'){
+    const box = b.closest('.scene');
+    const ta = box.querySelector('[data-f="text"]');
+    ta.value = ui.draft.text;
+    ui.draft = null;
+    b.closest('.draftbox').remove();
+    return;
+  }
+  if (act === 'draft'){
+    const s = p.scenes.find(x => x.id === id);
+    const fresh = readScene(b.closest('.scene'));
+    const s2 = {...s, ...fresh};
+    ui.draft = {id, busy: true};
+    render();
+    try {
+      const text = await draftScene(p, s2);
+      ui.draft = {id, text: text.trim()};
+    } catch (err) {
+      ui.draft = {id, err: err.message || 'Taslak üretilemedi. Tekrar dene.'};
+    }
+    render();
+    return;
+  }
+
+  const idx = p ? p.scenes.findIndex(s => s.id === id) : -1;
+
+  switch (act){
+    case 'tab':
+      ui.tab = b.dataset.tab; ui.editingId = null; ui.draft = null; break;
+    case 'editProj':
+      openProjDialog(p); return;
+    case 'export':
+      download((p.title || 'proje') + '-yedek.json', new Blob([JSON.stringify(p, null, 2)], {type: 'application/json'})); return;
+    case 'portfolio':
+      download((p.title || 'portfolyo') + '-portfolyo.html', new Blob([buildPortfolio(p)], {type: 'text/html'})); return;
+    case 'screenplay': {
+      const ep = b.dataset.ep;
+      const idxEp = ep ? epIndex(p, ep) : -1;
+      const name = ep && idxEp >= 0
+        ? `${p.title || 'senaryo'}-bolum-${idxEp + 1}-senaryo.docx`
+        : `${p.title || 'senaryo'}-senaryo.docx`;
+      download(name, buildScreenplayDocx(p, ep || undefined)); return;
+    }
+    case 'fountain': {
+      const ep = b.dataset.ep;
+      const idxEp = ep ? epIndex(p, ep) : -1;
+      const name = ep && idxEp >= 0
+        ? `${p.title || 'senaryo'}-bolum-${idxEp + 1}.fountain`
+        : `${p.title || 'senaryo'}.fountain`;
+      download(name, new Blob([buildFountain(p, ep || undefined)], {type: 'text/plain;charset=utf-8'})); return;
+    }
+    case 'delProj':
+      if (!sure('delProj:' + p.id)){ render(); return; }
+      state.projects = state.projects.filter(x => x.id !== p.id);
+      ui.projectId = state.projects[0] ? state.projects[0].id : null;
+      break;
+
+    case 'saveIdea': break;
+    case 'startIdea': ui.intake = true; ui.projectId = null; ui.idea = null; render(); return;
+    case 'startScript': openProjDialog(null); return;
+    case 'intakeCancel': ui.intake = false; ui.idea = null; break;
+    case 'intakeCreate': {
+      const text = (document.getElementById('ideaIn').value || '').trim();
+      if (!text){ ui.idea = {err: 'Önce fikrini birkaç satırla yaz.'}; render(); return; }
+      const title = (document.getElementById('intakeTitle').value || '').trim() || 'Adsız fikir';
+      const kind = document.getElementById('intakeKind').value === 'dizi' ? 'dizi' : 'film';
+      const np = {id: uid(), title, logline: '', synopsis: '', kind, format: 'amerikan', goal: 500, log: {},
+        stage: 'fikir', idea: text, guideNotes: '', scenes: [], chars: [], loglines: [], locs: [], details: [], episodes: []};
+      state.projects.push(np);
+      ui.projectId = np.id; ui.intake = false; ui.idea = null; ui.tab = 'sahneler';
+      save(); render(); return;
+    }
+    case 'ideaDone': {
+      p.stage = 'done'; ui.tab = 'sahneler'; ui.epFilter = 'tumu'; ui.idea = null;
+      break;
+    }
+    case 'ideaRun': {
+      const text = (p.idea || '').trim();
+      if (!text){ ui.idea = {err: 'Önce fikrini birkaç satırla yaz.'}; break; }
+      ui.idea = {busy: true}; save(); render();
+      try {
+        const raw = await ideaCall(ideaPrompt(p, text));
+        const j = parseJsonLoose(raw);
+        p.generated = {
+          logline: String(j.logline || '').trim(),
+          sinopsis: String(j.sinopsis || '').trim(),
+          sezonArki: String(j.sezon_arki || '').trim(),
+          bolumler: Array.isArray(j.bolumler) ? j.bolumler.map(x => ({no: x.no, ozet: String(x.ozet || '').trim(), amac: String(x.amac || '').trim(), kanca: String(x.kanca || '').trim()})) : [],
+          at: dkey()
+        };
+        ui.idea = null;
+      } catch (err) {
+        ui.idea = {err: err.message || 'Özetlenemedi. Tekrar dene.'};
+      }
+      save(); render(); return;
+    }
+    case 'ideaUseLogline': if (p.generated) p.logline = p.generated.logline; break;
+    case 'ideaUseSynopsis': if (p.generated) p.synopsis = p.generated.sinopsis; break;
+    case 'ideaApplyEps': {
+      const g = p.generated;
+      if (!g || !g.bolumler || !isDizi(p)) return;
+      g.bolumler.forEach((bl, i) => {
+        if (!p.episodes[i]) p.episodes.push({id: uid(), title: '', note: ''});
+        p.episodes[i].note = [bl.ozet, bl.amac && 'Amaç: ' + bl.amac, bl.kanca && 'Bölüm sonu: ' + bl.kanca]
+          .filter(Boolean).join('\n');
+      });
+      break;
+    }
+
+    case 'addEp': {
+      const e = readFields(document.getElementById('epBox'));
+      p.episodes.push({id: uid(), title: e.title || '', note: e.note || ''});
+      break;
+    }
+    case 'editEp': ui.editingId = id; break;
+    case 'saveEp': {
+      const e = p.episodes.find(x => x.id === id);
+      if (e) Object.assign(e, readFields(b.closest('.ep')));
+      ui.editingId = null; break;
+    }
+    case 'epUp': {
+      const i = epIndex(p, id);
+      if (i > 0) [p.episodes[i-1], p.episodes[i]] = [p.episodes[i], p.episodes[i-1]];
+      break;
+    }
+    case 'epDown': {
+      const i = epIndex(p, id);
+      if (i >= 0 && i < p.episodes.length - 1) [p.episodes[i+1], p.episodes[i]] = [p.episodes[i], p.episodes[i+1]];
+      break;
+    }
+    case 'epScenes':
+      ui.epFilter = id; ui.tab = 'sahneler'; ui.editingId = null; ui.draft = null; break;
+    case 'delEp': {
+      const e = p.episodes.find(x => x.id === id);
+      if (!e){ return; }
+      if (!sure('delEp:' + id)){ render(); return; }
+      p.episodes = p.episodes.filter(x => x.id !== id);
+      p.scenes.forEach(s => { if (s.episodeId === id) s.episodeId = ''; });
+      if (ui.epFilter === id) ui.epFilter = 'tumu';
+      break;
+    }
+
+    case 'addScene': {
+      const s = readScene(document.getElementById('newBox'));
+      if (!s.loc && !s.title){ alert('Bir mekan seç ya da sahneye ad ver.'); return; }
+      const sc = {id: uid(), status: 'taslak', wc: 0, ...s};
+      p.scenes.push(sc);
+      creditWords(p, sc);
+      break;
+    }
+    case 'edit': ui.editingId = id; ui.draft = null; break;
+    case 'saveScene': {
+      const s = p.scenes[idx];
+      Object.assign(s, readScene(b.closest('.scene')));
+      creditWords(p, s);
+      ui.editingId = null; ui.draft = null; break;
+    }
+    case 'status':
+      p.scenes[idx].status = NEXT[p.scenes[idx].status]; break;
+    case 'up':
+      if (idx > 0) [p.scenes[idx-1], p.scenes[idx]] = [p.scenes[idx], p.scenes[idx-1]]; break;
+    case 'down':
+      if (idx >= 0 && idx < p.scenes.length - 1) [p.scenes[idx+1], p.scenes[idx]] = [p.scenes[idx], p.scenes[idx+1]]; break;
+    case 'delScene':
+      if (!sure('delScene:' + id)){ render(); return; }
+      p.scenes.splice(idx, 1);
+      p.details.forEach(d => d.sceneIds = (d.sceneIds || []).filter(x => x !== id));
+      break;
+
+    case 'importDocx': {
+      const imp = ui.imp;
+      if (!imp) return;
+      const picked = [...document.querySelectorAll('#impChars input:checked')].map(i => i.value);
+      picked.forEach(name => {
+        if (!p.chars.some(c => lower(c.name) === lower(name)))
+          p.chars.push({id: uid(), name, want: '', fear: '', secret: '', voice: '', arc: ''});
+      });
+      imp.locs.forEach(name => {
+        if (!p.locs.some(l => lower(l.name) === lower(name))) p.locs.push({id: uid(), name, desc: ''});
+      });
+      p.episodes = p.episodes || [];
+      const epIds = isDizi(p) ? imp.episodes.map(e => {
+        const id = uid();
+        p.episodes.push({id, title: e.title, note: ''});
+        return id;
+      }) : [];
+      imp.scenes.forEach(sc => {
+        const loc = p.locs.find(l => lower(l.name) === lower(sc.loc));
+        const charIds = sc.cast.map(n => p.chars.find(c => lower(c.name) === lower(n))).filter(Boolean).map(c => c.id);
+        // İçe aktarılan metin geçmiş iş sayılır, bu yüzden günlük hedefe eklenmez.
+        p.scenes.push({id: uid(), status: 'taslak', title: '', goal: '', loc: loc ? loc.id : '',
+          ie: sc.ie, time: sc.time, charIds, from: '', to: '', text: sc.text, notes: '', brief: '',
+          episodeId: sc.ep >= 0 && epIds[sc.ep] ? epIds[sc.ep] : '', wc: wordCount(sc.text)});
+      });
+      ui.imp = null; ui.impErr = null; break;
+    }
+    case 'cancelImport': ui.imp = null; ui.impErr = null; break;
+
+    case 'addLoc': {
+      const l = readFields(document.getElementById('locBox'));
+      if (!l.name){ alert('Mekan adı gerekli.'); return; }
+      p.locs.push({id: uid(), ...l}); break;
+    }
+    case 'editLoc': ui.editingId = id; break;
+    case 'saveLoc':
+      Object.assign(p.locs.find(x => x.id === id), readFields(b.closest('.loc')));
+      ui.editingId = null; break;
+    case 'delLoc':
+      if (!sure('delLoc:' + id)){ render(); return; }
+      p.locs = p.locs.filter(x => x.id !== id);
+      p.scenes.forEach(s => { if (s.loc === id) s.loc = ''; }); break;
+
+    case 'addDetail': {
+      const d = readDetail(document.getElementById('detBox'));
+      if (!d.name){ alert('Detayın adı gerekli.'); return; }
+      p.details.push({id: uid(), ...d}); break;
+    }
+    case 'editDetail': ui.editingId = id; break;
+    case 'saveDetail': {
+      const d = p.details.find(x => x.id === id);
+      Object.assign(d, readDetail(b.closest('.det')));
+      ui.editingId = null; break;
+    }
+    case 'delDetail':
+      if (!sure('delDetail:' + id)){ render(); return; }
+      p.details = p.details.filter(x => x.id !== id); break;
+
+    case 'cancelCharImport': ui.cimp = null; ui.cimpErr = null; break;
+    case 'importChars': {
+      const imp = ui.cimp;
+      if (!imp) return;
+      const picks = [...document.querySelectorAll('#charImpList input:checked')].map(i => imp.cands[+i.value]).filter(Boolean);
+      const ids = picks.map(c => {
+        let ch = c.match ? p.chars.find(x => x.id === c.match) : null;
+        if (!ch){
+          ch = {id: uid(), name: c.name, role: '', tag: '', age: '', job: '', traits: '', flaw: '', want: '', need: '',
+            fear: '', secret: '', past: '', voice: '', sample: '', arc: '', rels: []};
+          p.chars.push(ch);
+        }
+        if (!ch.sample && c.sample) ch.sample = c.sample;
+        return ch.id;
+      });
+      imp.locs.forEach(l => {
+        if (!p.locs.some(x => lower(x.name) === lower(l.name))) p.locs.push({id: uid(), name: l.name, desc: ''});
+      });
+      // Eklenen ya da eşleşen karakter, adı projedeki sahnelerin metninde geçiyorsa o sahnelere bağlanır.
+      ids.forEach(id => {
+        const name = charName(p, id);
+        p.scenes.forEach(s => {
+          if (wordHas(lower(s.text || ''), lower(name)) && !(s.charIds || []).includes(id))
+            s.charIds = [...(s.charIds || []), id];
+        });
+      });
+      ui.cimp = null; ui.cimpErr = null; break;
+    }
+    case 'shootAuto': {
+      const n = Math.max(1, parseInt((document.getElementById('shootMaxIn') || {}).value, 10) || 4);
+      ui.shootMax = n; autoShootPlan(p, n); break;
+    }
+    case 'shootClear': p.scenes.forEach(s => s.shootDay = ''); break;
+    case 'sbImgDel': {
+      const sc = p.scenes.find(x => x.id === b.dataset.sid);
+      if (sc && sc.sb) delete sc.sb[b.dataset.idx];
+      break;
+    }
+    case 'addChar': {
+      const c = readChar(document.getElementById('charBox'));
+      if (!c.name){ alert('Karakter adı gerekli.'); return; }
+      p.chars.push({id: uid(), ...c}); break;
+    }
+    case 'editChar': ui.editingId = id; break;
+    case 'saveChar': {
+      const c = p.chars.find(x => x.id === id);
+      Object.assign(c, readChar(b.closest('.char')));
+      ui.editingId = null; break;
+    }
+    case 'delChar':
+      if (!sure('delChar:' + id)){ render(); return; }
+      p.chars = p.chars.filter(x => x.id !== id);
+      p.chars.forEach(c => c.rels = (c.rels || []).filter(r => r.to !== id));
+      p.scenes.forEach(s => s.charIds = (s.charIds || []).filter(x => x !== id));
+      break;
+    case 'cancelEdit': ui.editingId = null; ui.draft = null; break;
+    case 'focus': ui.focusId = id; ui.editingId = null; break;
+
+    case 'genLog': {
+      const lg = {
+        genre: document.getElementById('lgGenre').value,
+        char: document.getElementById('lgChar').value.trim(),
+        want: document.getElementById('lgWant').value.trim(),
+        obst: document.getElementById('lgObst').value.trim()
+      };
+      ui.lg = lg;
+      if (!lg.want || !lg.obst){ alert('"Ne istiyor?" ve "Önündeki engel" alanlarını doldur.'); return; }
+      ui.cands = makeLoglines(lg); break;
+    }
+    case 'saveLog': {
+      const l = ui.cands[+b.dataset.i];
+      p.loglines.push(l);
+      if (!p.logline) p.logline = l;
+      break;
+    }
+    case 'mainLog': p.logline = p.loglines[+b.dataset.i]; break;
+    case 'delLog': p.loglines.splice(+b.dataset.i, 1); break;
+
+    case 'addWords': {
+      const n = parseInt(document.getElementById('wordsIn').value, 10);
+      if (!n || n < 1) return;
+      p.log = p.log || {};
+      const k = dkey();
+      p.log[k] = (p.log[k] || 0) + n; break;
+    }
+    case 'setGoal': {
+      const n = parseInt(document.getElementById('goalIn').value, 10);
+      if (n > 0) p.goal = n; break;
+    }
+    default: return;
+  }
+  save(); render();
+});
+
+if (state.projects.length) ui.projectId = state.projects[0].id;
+render();
+</script>

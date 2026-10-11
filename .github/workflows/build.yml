@@ -1,0 +1,31 @@
+name: Uygulamayı derle
+on:
+  push:
+  workflow_dispatch:
+jobs:
+  build:
+    strategy:
+      matrix:
+        os: [windows-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: npm install
+      - name: Windows kurulum (.exe)
+        if: matrix.os == 'windows-latest'
+        run: npx electron-builder --win nsis --publish never
+      - name: Mac kurulum (.dmg)
+        if: matrix.os == 'macos-latest'
+        run: npx electron-builder --mac dmg --publish never
+      - uses: actions/upload-artifact@v4
+        with:
+          name: senaryo-atolyesi-${{ matrix.os }}
+          path: dist/*.exe
+      - uses: actions/upload-artifact@v4
+        if: matrix.os == 'macos-latest'
+        with:
+          name: senaryo-atolyesi-mac
+          path: dist/*.dmg
