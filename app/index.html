@@ -19,7 +19,7 @@ body{font-family:var(--sans);font-size:15px;line-height:1.5;background:var(--pap
 
 .app{display:grid;grid-template-columns:248px minmax(0,1fr);min-height:100vh}
 .side{background:var(--paper);border-right:1px solid var(--line);padding:24px 16px;position:sticky;top:0;height:100vh;overflow-y:auto}
-main{width:100%;max-width:960px;margin:0 auto;padding:36px 44px 64px}
+main{width:100%;max-width:1080px;margin:0 auto;padding:36px 44px 64px}
 .brand{font-family:var(--serif);font-size:20px;font-weight:600;padding:0 8px 20px;margin:0}
 .side-label{font-size:13px;color:var(--ink2);padding:0 8px 8px}
 .proj-link{display:block;width:100%;text-align:left;padding:8px 10px;border:0;background:none;border-radius:6px;color:var(--ink);font:inherit;cursor:pointer}
@@ -55,9 +55,9 @@ input:focus,textarea:focus,select:focus{outline:2px solid var(--red-soft);border
 
 .head{display:flex;justify-content:space-between;align-items:flex-start;gap:24px;flex-wrap:wrap}
 /* Üst menü: tek satır, sticky. Sığmazsa yatay kayar ama kaydırma çubuğu görünmez. */
-.tabs{position:sticky;top:0;z-index:5;display:flex;flex-wrap:nowrap;gap:2px;margin:20px -44px 24px;padding:0 44px;background:var(--paper);border-bottom:1px solid var(--line);overflow-x:auto;scrollbar-width:none;-ms-overflow-style:none}
+.tabs{position:sticky;top:0;z-index:5;display:flex;flex-wrap:nowrap;justify-content:space-between;gap:0;margin:20px -44px 24px;padding:0 44px;background:var(--paper);border-bottom:1px solid var(--line);overflow-x:auto;scrollbar-width:none;-ms-overflow-style:none}
 .tabs::-webkit-scrollbar{display:none}
-.tabs button{flex:0 0 auto;background:none;border:0;border-bottom:2px solid transparent;padding:14px 9px 12px;margin-bottom:-1px;color:var(--ink2);font:inherit;font-size:14px;cursor:pointer;white-space:nowrap}
+.tabs button{flex:0 0 auto;background:none;border:0;border-bottom:2px solid transparent;padding:14px 5px 12px;margin-bottom:-1px;color:var(--ink2);font:inherit;font-size:13.5px;cursor:pointer;white-space:nowrap}
 .tabs button:hover{color:var(--ink)}
 .tabs button[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--red);font-weight:600}
 .tabs .cnt{margin-left:4px}
@@ -116,7 +116,27 @@ dd{margin:0}
 .saved p{margin:0;font-family:var(--serif);font-size:17px;flex:1}
 
 .role-badge{font-size:12px;padding:3px 10px;border-radius:99px;color:var(--surface);background:var(--rc,var(--grey))}
-.char-card dl{margin-top:10px}
+.char-card{padding:18px 18px 16px}
+.char-top{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.char-count{font-size:12px;color:var(--ink2);background:var(--paper);border:1px solid var(--line);border-radius:99px;padding:2px 9px;white-space:nowrap}
+.char-name{font-size:22px;margin:12px 0 0}
+.char-tag{font-family:var(--serif);font-style:italic;font-size:16px;color:var(--ink2);margin:8px 0 0;padding-left:12px;border-left:2px solid var(--red-soft);line-height:1.45}
+.char-chips{display:flex;flex-wrap:wrap;gap:4px;margin-top:12px}
+.char-chip{font-size:12px;padding:2px 8px;border-radius:6px;background:#fff;border:1px solid var(--line);color:var(--ink2)}
+.char-arc{margin:12px 0 0;font-size:13px;color:var(--ink2)}
+.char-arc b{display:block;font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink2);font-weight:600;margin-bottom:2px}
+.char-dl{margin:14px 0 0;display:grid;grid-template-columns:1fr 1fr;gap:12px 16px;border-top:1px solid var(--line);padding-top:14px}
+.char-dl>div{display:flex;flex-direction:column;gap:2px;font-size:14px}
+.char-dl dt{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink2)}
+.char-dl dd{line-height:1.5}
+.char-more{margin-top:4px}
+.char-more summary{cursor:pointer;font-size:13px;color:var(--ink2);padding:10px 0 2px;list-style:none}
+.char-more summary::-webkit-details-marker{display:none}
+.char-more summary::after{content:" +";}
+.char-more[open] summary::after{content:" −";}
+.char-more .char-dl{grid-template-columns:1fr;padding-top:6px;border-top:0}
+.char-actions{margin-top:12px;padding-top:12px;border-top:1px solid var(--line)}
+@media (max-width:480px){.char-dl{grid-template-columns:1fr}}
 .conn{display:inline-block;margin-top:2px}
 .cand-row{display:flex;gap:10px;align-items:flex-start;padding:10px 0;border-top:1px solid var(--line);cursor:pointer}
 .cand-row:first-child{border-top:0}
@@ -245,7 +265,7 @@ dialog .foot{display:flex;justify-content:flex-end;gap:8px;margin-top:8px}
 const KEY = 'senaryo-atolyesi-v1';
 const STATUS_LABEL = {taslak:'Taslak', yazildi:'Yazıldı', revize:'Revize'};
 const NEXT = {taslak:'yazildi', yazildi:'revize', revize:'taslak'};
-const TABS = {sahneler:'Sahneler', bolumler:'Bölümler', karakterler:'Karakterler', yay:'Karakter yayı', mekanlar:'Mekanlar', cekim:'Çekim planı', storyboard:'Storyboard', detaylar:'Detaylar', kontrol:'Tutarlılık', akis:'Akış', logline:'Logline', hedef:'Yazma hedefi', portfolyo:'Portfolyo'};
+const TABS = {sahneler:'Sahneler', bolumler:'Bölümler', karakterler:'Karakterler', yay:'Karakter yayı', mekanlar:'Mekanlar', cekim:'Çekim planı', storyboard:'Storyboard', detaylar:'Detaylar', kontrol:'Tutarlılık', akis:'Akış', logline:'Logline', hedef:'Hedef', portfolyo:'Portfolyo'};
 const GENRES = ['Dram','Komedi','Gerilim','Korku','Romantik','Bilim kurgu','Macera','Suç'];
 const TIMES = ['GÜN','GECE','SABAH','AKŞAM'];
 const INTS = ['İÇ','DIŞ'];
@@ -1408,31 +1428,27 @@ function charsView(p){
     const conns = connectionsOf(p, c);
     const line = (k, v) => v ? `<div><dt>${k}</dt><dd>${esc(v)}</dd></div>` : '';
     const col = ROLE_COLOR[c.role] || 'var(--grey)';
+    const chips = scs.map(s => `<span class="char-chip" title="${esc(sluglineOf(p, s))}">Sahne ${p.scenes.indexOf(s) + 1}</span>`).join('');
+    const mainFields = [line('Yaş/görünüm', c.age), line('Meslek', c.job), line('İstiyor', c.want), line('Kusur', c.flaw)].join('');
+    const moreFields = [
+      line('Kişilik', c.traits), line('İhtiyacı', c.need), line('Korkuyor', c.fear),
+      line('Sırrı', c.secret), line('Geçmiş', c.past), line('Konuşma', c.voice),
+      line('Örnek replik', c.sample ? '"' + c.sample + '"' : ''),
+      conns.length ? `<div><dt>Bağlantılar</dt><dd>${conns.map(x => `<span class="conn">${x.dir} <strong>${esc(x.other)}</strong>: ${esc(x.text)}</span>`).join('<br>')}</dd></div>` : ''
+    ].join('');
     return `
     <article class="card char-card">
-      <div class="row" style="justify-content:space-between;align-items:center">
+      <div class="char-top">
         <span class="role-badge" style="--rc:${col}">${esc(c.role || 'Rol yok')}</span>
-        <span class="muted" style="font-size:12px">${scs.length} sahne</span>
+        <span class="char-count">${scs.length} sahne</span>
       </div>
-      <h3 style="margin-top:10px">${esc(c.name)}</h3>
-      ${c.tag ? `<div style="font-family:var(--serif);font-style:italic;color:var(--ink2);margin-top:4px">${esc(c.tag)}</div>` : ''}
-      <div class="muted" style="margin-top:6px">${scs.length} sahne${scs.length ? ': ' + scs.map(s => esc(s.title || sluglineOf(p, s))).join(', ') : ''}</div>
-      ${c.arc ? `<div class="muted" style="margin-top:4px">${esc(c.arc)}</div>` : ''}
-      <dl>
-        ${line('Yaş/görünüm', c.age)}
-        ${line('Meslek', c.job)}
-        ${line('Kişilik', c.traits)}
-        ${line('Kusur', c.flaw)}
-        ${line('İstiyor', c.want)}
-        ${line('İhtiyacı', c.need)}
-        ${line('Korkuyor', c.fear)}
-        ${line('Sırrı', c.secret)}
-        ${line('Geçmiş', c.past)}
-        ${line('Konuşma', c.voice)}
-        ${line('Örnek replik', c.sample ? '"' + c.sample + '"' : '')}
-        ${conns.length ? `<div><dt>Bağlantılar</dt><dd>${conns.map(x => `<span class="conn">${x.dir} <strong>${esc(x.other)}</strong>: ${esc(x.text)}</span>`).join('<br>')}</dd></div>` : ''}
-      </dl>
-      <div class="actions">
+      <h3 class="char-name">${esc(c.name)}</h3>
+      ${c.tag ? `<p class="char-tag">${esc(c.tag)}</p>` : ''}
+      ${scs.length ? `<div class="char-chips" aria-label="Geçtiği sahneler">${chips}</div>` : ''}
+      ${c.arc ? `<p class="char-arc"><b>Değişim</b>${esc(c.arc)}</p>` : ''}
+      <dl class="char-dl">${mainFields}</dl>
+      ${moreFields.trim() ? `<details class="char-more"><summary>Tüm ayrıntılar</summary><dl class="char-dl">${moreFields}</dl></details>` : ''}
+      <div class="actions char-actions">
         <button class="btn ghost small" data-act="editChar" data-id="${c.id}">Düzenle</button>
         ${delBtn('delChar', c.id)}
       </div>
