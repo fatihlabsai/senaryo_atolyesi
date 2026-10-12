@@ -2162,15 +2162,102 @@ function goalView(p){
 }
 
 /* Çıktılar */
-function buildPortfolio(p){
-  const body = `
-    <h1>${esc(p.title)}</h1>
-    <p><em>${esc(p.logline)}</em></p>
-    ${p.chars.length ? '<h2>Karakterler</h2>' + p.chars.map(c => `<h3>${esc(c.name)}</h3><p>${esc(c.want)}</p>`).join('') : ''}
-    ${p.scenes.length ? '<h2>Sahneler</h2>' + p.scenes.map((s, i) => `<h3>${i+1}. ${esc(s.title || sluglineOf(p, s))}</h3><p>${esc(s.goal)}</p>`).join('') : ''}`;
-  return `<!DOCTYPE html><html lang="tr"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>${esc(p.title)}</title>
-<style>body{font-family:Georgia,serif;max-width:720px;margin:40px auto;padding:0 20px;line-height:1.65;color:#1f1c18}</style>
-</head><body>${body}</body></html>`;
+/* Portfolyo: yarışma ve yapımcı başvurusu için Word dosyası. Gerçek başlık stilleri (Gezinti bölmesi çalışır),
+   kapak sayfası, tablolar ve sayfa numaralı alt bilgi içerir. Yalnızca sunuma giren bilgiler yer alır. */
+function buildPortfolioDocx(p){
+  const dizi = isDizi(p);
+  const NS = 'xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"';
+  const run = (t, o = {}) => `<w:r><w:rPr>${o.b ? '<w:b/>' : ''}${o.i ? '<w:i/>' : ''}${o.color ? `<w:color w:val="${o.color}"/>` : ''}${o.sz ? `<w:sz w:val="${o.sz}"/>` : ''}</w:rPr><w:t xml:space="preserve">${esc(t)}</w:t></w:r>`;
+  const lines = (t, o) => String(t ?? '').split('\n').map((l, i) => (i ? '<w:r><w:br/></w:r>' : '') + run(l, o)).join('');
+  const para = (t, style, o = {}) => `<w:p><w:pPr>${style ? `<w:pStyle w:val="${style}"/>` : ''}${o.pageBreak ? '<w:pageBreakBefore/>' : ''}</w:pPr>${lines(t, o)}</w:p>`;
+  let first = true;
+  const h1 = t => { const o = first ? {pageBreak: true} : {}; first = false; return para(t, 'Heading1', o); };
+  const h2 = t => para(t, 'Heading2');
+  const table = (widths, head, rows) => {
+    const tblPr = '<w:tblPr><w:tblW w:w="9026" w:type="dxa"/>'
+      + '<w:tblBorders><w:top w:val="single" w:sz="8" w:space="0" w:color="8A8278"/><w:bottom w:val="single" w:sz="8" w:space="0" w:color="8A8278"/><w:insideH w:val="single" w:sz="4" w:space="0" w:color="D9D2C5"/></w:tblBorders>'
+      + '<w:tblLayout w:type="fixed"/><w:tblCellMar><w:top w:w="40" w:type="dxa"/><w:left w:w="100" w:type="dxa"/><w:bottom w:w="40" w:type="dxa"/><w:right w:w="100" w:type="dxa"/></w:tblCellMar></w:tblPr>';
+    const grid = `<w:tblGrid>${widths.map(w => `<w:gridCol w:w="${w}"/>`).join('')}</w:tblGrid>`;
+    const cellXml = (w, v, isHead) => {
+      const c = typeof v === 'string' ? {t: v} : v;
+      const shd = isHead ? '<w:shd w:val="clear" w:color="auto" w:fill="EFEAE0"/>' : '';
+      const main = `<w:p><w:pPr><w:pStyle w:val="Cell"/></w:pPr>${lines(c.t, {b: isHead || c.b, sz: isHead ? 18 : 19})}</w:p>`;
+      const sub = c.sub ? `<w:p><w:pPr><w:pStyle w:val="Muted"/></w:pPr>${lines(c.sub, {})}</w:p>` : '';
+      return `<w:tc><w:tcPr><w:tcW w:w="${w}" w:type="dxa"/>${shd}</w:tcPr>${main}${sub}</w:tc>`;
+    };
+    const headRow = `<w:tr><w:trPr><w:tblHeader/></w:trPr>${head.map((h, i) => cellXml(widths[i], h, true)).join('')}</w:tr>`;
+    const bodyRows = rows.map(r => `<w:tr><w:trPr><w:cantSplit/></w:trPr>${r.map((v, i) => cellXml(widths[i], v, false)).join('')}</w:tr>`).join('');
+    return `<w:tbl>${tblPr}${grid}${headRow}${bodyRows}</w:tbl>` + para('', null);
+  };
+
+  let body = '';
+  body += para(p.title || 'Senaryo', 'Title');
+  body += para(dizi ? 'Dizi portfolyosu' : 'Film portfolyosu', 'Subtitle');
+  if (p.logline) body += para(p.logline, 'Lead');
+  body += para(`${dizi ? 'Dizi' : 'Film'} · ${p.scenes.length} sahne · ${p.chars.length} karakter${dizi ? ` · ${p.episodes.length} bölüm` : ''}`, 'Facts');
+
+  if (p.synopsis){
+    body += h1('Sinopsis');
+    p.synopsis.split(/\n\s*\n/).map(x => x.trim()).filter(Boolean).forEach(x => body += para(x, 'Body'));
+  }
+  if (dizi && p.episodes.length){
+    body += h1('Bölümler');
+    body += table([900, 3000, 5126], ['No', 'Bölüm', 'Not'],
+      p.episodes.map((e, i) => [String(i + 1), {t: e.title || `${i + 1}. Bölüm`, b: true}, e.note || '–']));
+  }
+  if (p.chars.length){
+    body += h1('Karakterler');
+    body += table([1900, 1300, 2200, 2000, 1626], ['Karakter', 'Rol', 'İstediği', 'İhtiyacı', 'Korkusu'],
+      p.chars.map(c => [{t: c.name, b: true}, c.role || '–', c.want || '–', c.need || '–', c.fear || '–']));
+  }
+  if (p.scenes.length){
+    body += h1('Sahneler');
+    const cols = [600, 3300, 2300, 2826];
+    scriptGroups(p).forEach(g => {
+      if (dizi) body += h2(g.ep ? `${epIndex(p, g.ep.id) + 1}. Bölüm${g.ep.title ? ' · ' + g.ep.title : ''}` : 'Bölüm dışı sahneler');
+      if (!g.scenes.length){ body += para('Bu bölümde henüz sahne yok.', 'Muted'); return; }
+      body += table(cols, ['No', 'Sahne', 'Karakterler', 'Amaç'], g.scenes.map(sc => {
+        const no = p.scenes.indexOf(sc) + 1;
+        const names = (sc.charIds || []).map(id => charName(p, id)).filter(Boolean).join(', ');
+        return [String(no),
+          sc.title ? {t: sc.title, b: true, sub: sluglineOf(p, sc)} : {t: sluglineOf(p, sc), b: true},
+          names || '–',
+          sc.goal || '–'];
+      }));
+    });
+  }
+
+  const sect = '<w:sectPr><w:footerReference w:type="default" r:id="rId3"/><w:pgSz w:w="11906" w:h="16838"/><w:pgMar w:top="1440" w:right="1440" w:bottom="1440" w:left="1440" w:header="708" w:footer="708" w:gutter="0"/></w:sectPr>';
+  const doc = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:document ${NS}><w:body>${body}${sect}</w:body></w:document>`;
+  const ct = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/><Override PartName="/word/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml"/><Override PartName="/word/settings.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.settings+xml"/><Override PartName="/word/footer1.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.footer+xml"/></Types>';
+  const docRels = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/><Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/settings" Target="settings.xml"/><Relationship Id="rId3" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/footer" Target="footer1.xml"/></Relationships>';
+  const style = (id, name, ppr, rpr, extra = '') => `<w:style w:type="paragraph" w:styleId="${id}"><w:name w:val="${name}"/><w:basedOn w:val="Normal"/>${extra}<w:qFormat/><w:pPr>${ppr}</w:pPr><w:rPr>${rpr}</w:rPr></w:style>`;
+  const styles = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:styles ${NS}>`
+    + '<w:docDefaults><w:rPrDefault><w:rPr><w:rFonts w:ascii="Georgia" w:hAnsi="Georgia" w:cs="Georgia" w:eastAsia="Georgia"/><w:sz w:val="22"/><w:szCs w:val="22"/><w:lang w:val="tr-TR"/></w:rPr></w:rPrDefault><w:pPrDefault><w:pPr><w:spacing w:after="120" w:line="288" w:lineRule="auto"/></w:pPr></w:pPrDefault></w:docDefaults>'
+    + '<w:style w:type="paragraph" w:default="1" w:styleId="Normal"><w:name w:val="Normal"/><w:qFormat/><w:rPr><w:color w:val="1D1B18"/></w:rPr></w:style>'
+    + style('Title', 'Title', '<w:jc w:val="center"/><w:spacing w:before="2600" w:after="200" w:line="240" w:lineRule="auto"/>', '<w:b/><w:sz w:val="52"/><w:color w:val="1D1B18"/>')
+    + style('Subtitle', 'Subtitle', '<w:jc w:val="center"/><w:spacing w:after="360"/>', '<w:i/><w:sz w:val="26"/><w:color w:val="6B6259"/>')
+    + style('Lead', 'Lead', '<w:jc w:val="center"/><w:spacing w:after="240"/><w:ind w:left="720" w:right="720"/>', '<w:i/><w:sz w:val="24"/><w:color w:val="3A362F"/>')
+    + style('Facts', 'Facts', '<w:jc w:val="center"/><w:spacing w:before="240" w:after="0"/>', '<w:sz w:val="18"/><w:color w:val="6B6259"/>')
+    + style('Heading1', 'heading 1', '<w:keepNext/><w:keepLines/><w:pBdr><w:bottom w:val="single" w:sz="6" w:space="4" w:color="BFB6A8"/></w:pBdr><w:spacing w:before="360" w:after="200"/><w:outlineLvl w:val="0"/>', '<w:b/><w:sz w:val="30"/><w:color w:val="1D1B18"/>', '<w:next w:val="Body"/>')
+    + style('Heading2', 'heading 2', '<w:keepNext/><w:keepLines/><w:spacing w:before="280" w:after="100"/><w:outlineLvl w:val="1"/>', '<w:b/><w:sz w:val="24"/><w:color w:val="1D1B18"/>', '<w:next w:val="Body"/>')
+    + style('Body', 'Body Text', '<w:spacing w:after="160"/>', '<w:sz w:val="22"/>')
+    + style('Cell', 'Table Text', '<w:spacing w:before="20" w:after="20" w:line="252" w:lineRule="auto"/>', '<w:sz w:val="19"/>')
+    + style('Muted', 'Muted', '<w:spacing w:before="0" w:after="60"/>', '<w:sz w:val="17"/><w:color w:val="6B6259"/>')
+    + style('Footer', 'footer', '<w:jc w:val="center"/><w:spacing w:after="0"/>', '<w:sz w:val="16"/><w:color w:val="8A8278"/>')
+    + '</w:styles>';
+  const settings = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:settings ${NS}><w:defaultTabStop w:val="720"/><w:compat><w:compatSetting w:name="compatibilityMode" w:uri="http://schemas.microsoft.com/office/word" w:val="15"/></w:compat></w:settings>`;
+  const footer = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:ftr ${NS}><w:p><w:pPr><w:pStyle w:val="Footer"/></w:pPr>${run((p.title || 'Portfolyo') + '  ·  ', {})}<w:fldSimple w:instr=" PAGE "><w:r><w:t>1</w:t></w:r></w:fldSimple></w:p></w:ftr>`;
+  const enc = new TextEncoder();
+  return makeZip([
+    {name: '[Content_Types].xml', data: enc.encode(ct)},
+    {name: '_rels/.rels', data: enc.encode(RELS_XML)},
+    {name: 'word/_rels/document.xml.rels', data: enc.encode(docRels)},
+    {name: 'word/document.xml', data: enc.encode(doc)},
+    {name: 'word/styles.xml', data: enc.encode(styles)},
+    {name: 'word/settings.xml', data: enc.encode(settings)},
+    {name: 'word/footer1.xml', data: enc.encode(footer)}
+  ]);
 }
 
 const CT_XML = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/></Types>`;
@@ -2202,7 +2289,8 @@ function makeZip(files){
     {type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'});
 }
 function xmlRun(text, o = {}){
-  return `<w:r><w:rPr><w:rFonts w:ascii="Courier New" w:hAnsi="Courier New" w:cs="Courier New"/>${o.b ? '<w:b/>' : ''}${o.i ? '<w:i/>' : ''}<w:sz w:val="${o.sz || 24}"/></w:rPr><w:t xml:space="preserve">${esc(text)}</w:t></w:r>`;
+  const f = o.font || 'Courier New';
+  return `<w:r><w:rPr><w:rFonts w:ascii="${f}" w:hAnsi="${f}" w:cs="${f}"/>${o.b ? '<w:b/>' : ''}${o.i ? '<w:i/>' : ''}<w:sz w:val="${o.sz || 24}"/></w:rPr><w:t xml:space="preserve">${esc(text)}</w:t></w:r>`;
 }
 function xmlPara(text, o = {}){
   const kn = (o.keepNext ? '<w:keepNext/>' : '') + (o.pageBreak ? '<w:pageBreakBefore/>' : '');
@@ -2319,8 +2407,8 @@ function portfolioView(p){
       ${p.scenes.length ? p.scenes.map((s, i) => `<p><strong>${i+1}. ${esc(s.title || sluglineOf(p, s))}</strong><br>${esc(s.goal)}</p>`).join('') : '<p class="muted">Sahne yok.</p>'}
     </div>
     ${canDl() ? `<div class="row" style="margin-top:16px">
-      <button class="btn primary" data-act="portfolio">Portfolyo sayfasını indir</button>
-      <span class="muted">Tek başına açılan bir HTML sayfası.</span>
+      <button class="btn primary" data-act="portfolio">Word dosyası indir (.docx)</button>
+      <span class="muted">Yarışma ve yapımcı başvurusu için hazır dosya. Logline, sinopsis, karakterler ve sahne amaçları yer alır.</span>
     </div>` : ''}`;
 }
 
@@ -2809,7 +2897,7 @@ appEl.addEventListener('click', async e => {
     case 'export':
       download((p.title || 'proje') + '-yedek.json', new Blob([JSON.stringify(p, null, 2)], {type: 'application/json'})); return;
     case 'portfolio':
-      download((p.title || 'portfolyo') + '-portfolyo.html', new Blob([buildPortfolio(p)], {type: 'text/html'})); return;
+      download((p.title || 'portfolyo') + '-portfolyo.docx', buildPortfolioDocx(p)); return;
     case 'analizSec': ui.analizSec = b.dataset.sec; break;
     case 'snapSave': {
       const labelEl = document.getElementById('snapLabel');
