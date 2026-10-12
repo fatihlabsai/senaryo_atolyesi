@@ -72,6 +72,13 @@ input:focus,textarea:focus,select:focus{outline:2px solid var(--red-soft);border
 
 .card{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:20px;margin-bottom:16px}
 .card-title{margin:0 0 16px}
+#altKutu{margin-top:auto;display:flex;flex-direction:column;gap:10px;padding-top:14px}
+#altKutu #updBox{margin-top:0;padding-top:0}
+.acc-box{padding:10px 12px;border:1px solid rgba(0,0,0,.1);border-radius:10px;background:rgba(255,255,255,.55)}
+#authGate{position:fixed;inset:0;z-index:60;background:rgba(241,238,231,.92);display:flex;align-items:center;justify-content:center;padding:16px}
+.auth-card{position:relative;width:min(380px,100%);background:#fffdf8;border:1px solid rgba(0,0,0,.12);border-radius:14px;padding:26px 24px;box-shadow:0 10px 36px rgba(0,0,0,.14)}
+.auth-title{font-family:var(--serif);font-size:24px;font-weight:400;margin:0 0 6px}
+.auth-close{position:absolute;top:10px;right:10px}
 .table-wrap{overflow-x:auto}
 .dtab{width:100%;border-collapse:collapse;font-size:14px}
 .dtab th,.dtab td{text-align:left;padding:8px 6px;border-bottom:1px solid rgba(127,127,127,.2);vertical-align:middle}
@@ -273,7 +280,7 @@ dialog .foot{display:flex;justify-content:flex-end;gap:8px;margin-top:8px}
     <div id="projectList"></div>
     <button class="btn primary" id="newProj">Yeni proje</button>
     <button class="btn ghost" id="undoBtn" style="width:100%;margin-top:8px" title="Son değişikliği geri al (Ctrl+Z)">Geri al</button>
-    <div id="updBox"></div>
+    <div id="altKutu"><div id="accBox"></div><div id="updBox"></div></div>
   </nav>
   <main id="app"></main>
 </div>
@@ -430,12 +437,14 @@ function save(){
   const next = JSON.stringify(state);
   if (prev !== null && prev !== next){ HIST.push(prev); if (HIST.length > 30) HIST.shift(); }
   localStorage.setItem(KEY, next);
+  bulutSonra();
 }
 function undo(){
   const prev = HIST.pop();
   if (!prev) return false;
   state = JSON.parse(prev);
   localStorage.setItem(KEY, prev);
+  bulutSonra();
   if (!state.projects.some(p => p.id === ui.projectId)) ui.projectId = state.projects[0] ? state.projects[0].id : null;
   ui.editingId = null; ui.draft = null; ui.armed = null;
   render();
@@ -2041,6 +2050,22 @@ function csvKarakterler(p){
   return rows;
 }
 
+/* Hızlı fikir: proje sayfasında her sekmeden erişilir. Aklına gelen fikri hemen yazıp kaybetmemek için. */
+function quickIdeaHtml(p){
+  const list = (p.fikirler || []).slice().reverse();
+  return `<section class="card quick-idea" style="margin-bottom:16px">
+    <div class="between"><strong>Hızlı fikir</strong><span class="muted">${list.length} kayıtlı</span></div>
+    <div class="row" style="gap:8px;margin-top:10px">
+      <input id="quickIdeaIn" value="${esc(ui.quickDraft || '')}" placeholder="Aklına gelen fikri hemen yaz…" style="flex:1;min-width:200px" aria-label="Hızlı fikir">
+      <button class="btn primary small" data-act="quickIdeaAdd">Kaydet</button>
+    </div>
+    ${list.length ? `<details ${ui.quickOpen ? 'open' : ''} style="margin-top:12px"><summary class="muted" style="cursor:pointer">Kayıtlı fikirleri göster</summary>
+      <ul class="flowlist" style="margin:10px 0 0">${list.map(f => `<li>
+        <div>${esc(f.metin)}</div>
+        <div class="between muted" style="font-size:12px;margin-top:4px"><span>${esc(new Date(f.at).toLocaleString('tr-TR', {dateStyle: 'short', timeStyle: 'short'}))}</span>${delBtn('delQuickIdea', f.id, 'Sil')}</div>
+      </li>`).join('')}</ul></details>` : ''}
+  </section>`;
+}
 function analizSecim(){ return ui.analizSec && ANALIZ_SEC[ui.analizSec] ? ui.analizSec : 'diyalog'; }
 function analizBody(p){
   return {diyalog: diyalogView, yapi: yapiView, kronoloji: kronolojiView, surum: surumView}[analizSecim()](p);
@@ -2510,6 +2535,7 @@ async function checkForUpdate(){
 }
 function renderSidebar(){
   renderUpdateBox();
+  renderAccount();
   const cp = cur();
   const ub = document.getElementById('undoBtn');
   if (ub) ub.disabled = HIST.length === 0;
@@ -2586,6 +2612,7 @@ function renderFocus(){
 }
 
 function render(){
+  renderAuthGate();
   renderFocus();
   renderSidebar();
   const app = document.getElementById('app');
@@ -2649,6 +2676,7 @@ function render(){
         ${delBtn('delProj', p.id, 'Projeyi sil')}
       </div>
     </header>
+    ${quickIdeaHtml(p)}
     <nav class="tabs" role="tablist">
       ${Object.entries(TABS).filter(([k]) => k !== 'bolumler' || isDizi(p)).map(([k, v]) => `
         <button role="tab" aria-selected="${ui.tab === k}" data-act="tab" data-tab="${k}">${v}${k in counts && counts[k] ? `<span class="cnt">${counts[k]}</span>` : ''}</button>`).join('')}
@@ -2753,7 +2781,262 @@ document.getElementById('projectList').addEventListener('click', e => {
   render();
 });
 
+/* ===== Hesap ve bulut senkronu (Supabase). Veri her zaman bu bilgisayarda önbelleklenir;
+   giriş yapılmışsa değişiklikler birkaç saniye içinde buluta yazılır. ===== */
+const SB_URL = 'https://ubxmswdfbremkpgemhur.supabase.co';
+const SB_KEY = 'sb_publishable_rJ_8yjEjAPwrcEXiWDsbOw_hfsDzwGD';
+const ACC_KEY = 'senaryo-hesap-v1';
+const LOCAL_KEY = 'senaryo-yerel-kabul';
+let account = (() => { try { return JSON.parse(localStorage.getItem(ACC_KEY)) || null; } catch (e) { return null; } })();
+let syncTimer = null;
+
+function sbHata(j){
+  const m = String((j && (j.msg || j.error_description || j.message || j.error)) || '');
+  if (/Invalid login/i.test(m)) return 'E-posta veya şifre hatalı.';
+  if (/already (been )?registered/i.test(m)) return 'Bu e-posta ile zaten üyelik var. Giriş yapmayı dene.';
+  if (/Password should be at least/i.test(m)) return 'Şifre en az 6 karakter olmalı.';
+  if (/Email not confirmed/i.test(m)) return 'E-posta adresin henüz onaylanmamış. Gelen kutundaki bağlantıya tıkla.';
+  if (/row-level security/i.test(m)) return 'Bulut kaydı yetkisiz. Veritabanı kurallarını kontrol et.';
+  if (/Could not find the table|does not exist/i.test(m)) return 'Bulut tablosu bulunamadı. Kurulum SQL\'ini çalıştırdın mı?';
+  return m || 'İşlem başarısız.';
+}
+function accSave(a){
+  account = a;
+  try { if (a) localStorage.setItem(ACC_KEY, JSON.stringify(a)); else localStorage.removeItem(ACC_KEY); } catch (e) {}
+}
+function oturumdan(j, email){
+  return {token: j.access_token, refresh: j.refresh_token, exp: Date.now() + (j.expires_in || 3600) * 1000,
+    uid: j.user ? j.user.id : '', email: (j.user && j.user.email) || email || ''};
+}
+async function sbAuth(path, body, token){
+  const h = {apikey: SB_KEY, 'Content-Type': 'application/json'};
+  if (token) h.Authorization = 'Bearer ' + token;
+  const r = await fetch(SB_URL + '/auth/v1/' + path, {method: 'POST', headers: h, body: JSON.stringify(body || {})});
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(sbHata(j));
+  return j;
+}
+// Süre dolmak üzereyse oturum anahtarını yeniler.
+async function accTazele(){
+  if (!account) throw new Error('Oturum açık değil.');
+  if (account.exp - Date.now() > 60000) return;
+  const j = await sbAuth('token?grant_type=refresh_token', {refresh_token: account.refresh});
+  const n = oturumdan(j, account.email);
+  accSave(Object.assign({}, account, {token: n.token, refresh: n.refresh, exp: n.exp}));
+}
+async function sbRest(method, path, body, prefer){
+  await accTazele();
+  const h = {apikey: SB_KEY, Authorization: 'Bearer ' + account.token, 'Content-Type': 'application/json'};
+  if (prefer) h.Prefer = prefer;
+  const r = await fetch(SB_URL + '/rest/v1/' + path, {method, headers: h, body: body ? JSON.stringify(body) : undefined});
+  if (!r.ok){ const j = await r.json().catch(() => ({})); throw new Error(sbHata(j)); }
+  if (r.status === 204) return null;
+  return r.json().catch(() => null);
+}
+
+function setSync(s, msg){ ui.sync = {s, msg: msg || ''}; renderAccount(); }
+// Değişiklikten sonra kısa bir gecikmeyle buluta yaz (art arda tuşlamalarda tek istek gider).
+function bulutSonra(){
+  if (!account) return;
+  clearTimeout(syncTimer);
+  setSync('saving', 'Kaydediliyor');
+  syncTimer = setTimeout(bulutYaz, 1200);
+}
+async function bulutYaz(){
+  clearTimeout(syncTimer);
+  if (!account) return;
+  try {
+    await sbRest('POST', 'kullanici_verisi?on_conflict=user_id',
+      {user_id: account.uid, veri: state, guncellendi: new Date().toISOString()},
+      'resolution=merge-duplicates,return=minimal');
+    setSync('ok', 'Buluta kaydedildi');
+  } catch (e) { setSync('error', e.message); }
+}
+// Bu bilgisayardaki veriyi yedeğe alır (en fazla 2 yedek saklanır).
+function yedekle(prefix, data){
+  try {
+    localStorage.setItem(prefix + Date.now(), JSON.stringify(data));
+    const ks = Object.keys(localStorage).filter(k => k.startsWith(prefix)).sort();
+    while (ks.length > 2) localStorage.removeItem(ks.shift());
+  } catch (e) {}
+}
+// Hafızadaki veriyi değiştirir; buluta yazmaz (çağıran karar verir).
+function durumDegistir(yeni){
+  HIST.length = 0;
+  state = yeni;
+  state.projects = Array.isArray(state.projects) ? state.projects : [];
+  localStorage.setItem(KEY, JSON.stringify(state));
+  ui.projectId = state.projects[0] ? state.projects[0].id : null;
+  ui.editingId = null; ui.draft = null;
+}
+// Girişten sonra: bulutta veri yoksa yerel veriyi yükle; yerelde veri yoksa buluttan indir;
+// ikisi de doluysa kullanıcıya sor, hiçbir veri sessizce silinmesin.
+async function bulutBaslat(){
+  setSync('saving', 'Bulut kontrol ediliyor');
+  const rows = await sbRest('GET', 'kullanici_verisi?select=veri,guncellendi&user_id=eq.' + account.uid);
+  const bulut = rows && rows[0];
+  const yerelVar = state.projects.length > 0;
+  if (!bulut){
+    if (yerelVar) await bulutYaz(); else setSync('ok', 'Buluta bağlı');
+    return;
+  }
+  const bv = bulut.veri || {projects: []};
+  if (JSON.stringify(bv) === JSON.stringify(state)){ setSync('ok', 'Buluta bağlı'); return; }
+  if (!yerelVar || !(bv.projects || []).length){
+    yedekle('senaryo-yerel-yedek-', state);
+    durumDegistir(bv);
+    setSync('ok', 'Buluttan yüklendi');
+    return;
+  }
+  ui.syncChoice = {bulut: bv};
+  setSync('ok', 'Seçim bekleniyor');
+}
+async function cikis(){
+  if (syncTimer){ await bulutYaz(); }
+  const t = account && account.token;
+  if (t){ try { await fetch(SB_URL + '/auth/v1/logout', {method: 'POST', headers: {apikey: SB_KEY, Authorization: 'Bearer ' + t}}); } catch (e) {} }
+  accSave(null);
+  ui.sync = null; ui.armed = null; ui.syncChoice = null;
+  localStorage.removeItem(KEY);
+  state = {projects: []};
+  HIST.length = 0;
+  ui.projectId = null; ui.editingId = null; ui.draft = null;
+  render();
+}
+
+async function authIslem(mod, email, pass){
+  ui.authBusy = true; ui.authMsg = ''; ui.authEmail = email;
+  renderAuthGate();
+  try {
+    let j;
+    if (mod === 'signup'){
+      j = await sbAuth('signup', {email, password: pass});
+      if (!j.access_token){
+        ui.authMsg = 'Onay bağlantısı e-postana gönderildi. Onayladıktan sonra giriş yap.';
+        ui.authMode = 'login';
+        return;
+      }
+    } else {
+      j = await sbAuth('token?grant_type=password', {email, password: pass});
+    }
+    accSave(oturumdan(j, email));
+    localStorage.removeItem(LOCAL_KEY);
+    ui.authOpen = false;
+    try { await bulutBaslat(); } catch (e) { setSync('error', e.message); }
+  } catch (e) {
+    ui.authMsg = e.message;
+  } finally {
+    ui.authBusy = false;
+    render();
+  }
+}
+
+function authFormHtml(){
+  const m = ui.authMode === 'signup' ? 'signup' : 'login';
+  const bekle = ui.authBusy;
+  return `<div class="auth-card" role="dialog" aria-modal="true" aria-label="Hesap">
+    ${ui.authOpen ? `<button class="btn ghost small auth-close" data-auth="close" aria-label="Kapat">Kapat</button>` : ''}
+    <h2 class="auth-title">Senaryo Atölyesi</h2>
+    <p class="muted" style="margin:0 0 16px">Projelerin hesabında saklanır. Başka bir bilgisayardan aynı hesapla girince kaldığın yerden devam edersin.</p>
+    <div class="row" style="gap:6px;margin-bottom:14px">
+      <button class="btn small ${m === 'login' ? 'primary' : 'ghost'}" data-auth="mode" data-m="login">Giriş yap</button>
+      <button class="btn small ${m === 'signup' ? 'primary' : 'ghost'}" data-auth="mode" data-m="signup">Üye ol</button>
+    </div>
+    <form id="authForm">
+      <div class="field"><label for="authEmail">E-posta</label>
+        <input id="authEmail" type="email" required autocomplete="email" value="${esc(ui.authEmail || '')}"></div>
+      <div class="field"><label for="authPass">Şifre</label>
+        <input id="authPass" type="password" required minlength="6" autocomplete="${m === 'signup' ? 'new-password' : 'current-password'}"></div>
+      <p class="muted" style="min-height:20px;margin:6px 0 10px;color:${ui.authMsg && ui.authMsg.indexOf('gönderildi') < 0 ? '#b42318' : 'inherit'}">${esc(ui.authMsg || '')}</p>
+      <button class="btn primary" type="submit" ${bekle ? 'disabled' : ''} style="width:100%">${bekle ? 'Bekle…' : (m === 'signup' ? 'Üye ol' : 'Giriş yap')}</button>
+    </form>
+    ${!ui.authOpen ? `<button class="btn ghost small" data-auth="local" style="width:100%;margin-top:12px">Hesapsız, bu bilgisayarda kullan</button>` : ''}
+  </div>`;
+}
+function syncChoiceHtml(){
+  return `<div class="auth-card" role="dialog" aria-modal="true" aria-label="Veri seçimi">
+    <h2 class="auth-title">Hangi veri kullanılsın?</h2>
+    <p class="muted" style="margin:0 0 16px">Bu bilgisayarda da hesabında da proje var ve ikisi farklı. Birini seçtiğinde diğeri yedek olarak bu bilgisayarda saklanır, silinmez.</p>
+    <button class="btn primary" data-sync="cloud" style="width:100%">Hesabımdakini kullan</button>
+    <button class="btn ghost" data-sync="local" style="width:100%;margin-top:10px">Bu bilgisayardakini hesaba yükle</button>
+  </div>`;
+}
+function renderAuthGate(){
+  let el = document.getElementById('authGate');
+  const goster = ui.syncChoice ? true : (!account && (!localStorage.getItem(LOCAL_KEY) || !!ui.authOpen));
+  if (!goster){ if (el) el.remove(); return; }
+  if (!el){ el = document.createElement('div'); el.id = 'authGate'; document.body.appendChild(el); }
+  el.innerHTML = ui.syncChoice ? syncChoiceHtml() : authFormHtml();
+}
+function renderAccount(){
+  const box = document.getElementById('accBox');
+  if (!box) return;
+  if (!account){
+    box.innerHTML = `<button class="upd-btn" data-auth="open"><span><small>${localStorage.getItem(LOCAL_KEY) ? 'Hesapsız kullanım' : 'Hesap yok'}</small><br>Giriş yap · üye ol</span></button>`;
+    return;
+  }
+  const s = ui.sync || {s: '', msg: ''};
+  const durum = s.s === 'saving' ? 'Kaydediliyor…' : s.s === 'error' ? 'Kayıt hatası: ' + s.msg : s.msg;
+  box.innerHTML = `<div class="acc-box">
+    <div style="font-size:13px;overflow-wrap:anywhere">${esc(account.email || '')}</div>
+    <div class="muted" style="font-size:12px;margin-top:2px">${esc(durum)}</div>
+    <button class="btn ghost small" data-auth="logout" style="margin-top:6px;padding-left:0">${ui.armed === 'logout' ? 'Emin misin? Bu bilgisayardaki kopya silinir' : 'Çıkış yap'}</button>
+  </div>`;
+}
+
+document.body.addEventListener('submit', e => {
+  if (!e.target || e.target.id !== 'authForm') return;
+  e.preventDefault();
+  const email = trim(document.getElementById('authEmail').value);
+  const pass = document.getElementById('authPass').value;
+  authIslem(ui.authMode === 'signup' ? 'signup' : 'login', email, pass);
+});
+document.body.addEventListener('click', async e => {
+  const b = e.target.closest && e.target.closest('[data-auth],[data-sync]');
+  if (!b) return;
+  if (b.dataset.sync){
+    const yedekKarar = ui.syncChoice;
+    if (!yedekKarar) return;
+    if (b.dataset.sync === 'cloud'){
+      yedekle('senaryo-yerel-yedek-', state);
+      durumDegistir(yedekKarar.bulut);
+    } else {
+      yedekle('senaryo-bulut-yedek-', yedekKarar.bulut);
+    }
+    ui.syncChoice = null;
+    render();
+    if (b.dataset.sync === 'local') await bulutYaz();
+    return;
+  }
+  const a = b.dataset.auth;
+  if (a === 'mode'){ ui.authMode = b.dataset.m; ui.authMsg = ''; renderAuthGate(); }
+  else if (a === 'local'){ localStorage.setItem(LOCAL_KEY, '1'); ui.authOpen = false; render(); }
+  else if (a === 'open'){ ui.authOpen = true; ui.authMsg = ''; renderAuthGate(); }
+  else if (a === 'close'){ ui.authOpen = false; renderAuthGate(); }
+  else if (a === 'logout'){
+    if (!sure('logout')){ renderAccount(); return; }
+    await cikis();
+  }
+});
+
+async function authBoot(){
+  if (!account){ render(); return; }
+  try { await accTazele(); }
+  catch (e) {
+    if (e instanceof TypeError){ setSync('error', 'Çevrimdışı. Bağlantı gelince tekrar denenecek.'); }
+    else { accSave(null); ui.authMsg = 'Oturumun süresi doldu. Tekrar giriş yap.'; render(); return; }
+  }
+  if (account){
+    try { await bulutBaslat(); } catch (e) { setSync('error', e.message); }
+  }
+  render();
+}
+
 const appEl = document.getElementById('app');
+// Açık kalan listeler yeniden çizimde kapanmasın diye durumu sakla.
+appEl.addEventListener('toggle', e => {
+  if (e.target && e.target.closest && e.target.closest('.quick-idea')) ui.quickOpen = e.target.open;
+}, true);
 appEl.addEventListener('input', e => {
   if (e.target.id === 'sceneSearch'){
     ui.q = e.target.value;
@@ -2835,6 +3118,8 @@ appEl.addEventListener('click', async e => {
   if (!b) return;
   const act = b.dataset.act, id = b.dataset.id, p = cur();
   // Fikir metni, başka bir düğmeye basılmadan önce kaybolmasın.
+  const qEl = document.getElementById('quickIdeaIn');
+  if (qEl) ui.quickDraft = qEl.value;
   const ideaEl = document.getElementById('ideaIn');
   if (ideaEl && p) p.idea = ideaEl.value;
   const guideEl = document.getElementById('guideIn');
@@ -2899,6 +3184,19 @@ appEl.addEventListener('click', async e => {
     case 'portfolio':
       download((p.title || 'portfolyo') + '-portfolyo.docx', buildPortfolioDocx(p)); return;
     case 'analizSec': ui.analizSec = b.dataset.sec; break;
+    case 'quickIdeaAdd': {
+      const t = trim(ui.quickDraft || '');
+      if (!t) break;
+      p.fikirler = p.fikirler || [];
+      p.fikirler.push({id: uid(), metin: t, at: new Date().toISOString()});
+      ui.quickDraft = '';
+      break;
+    }
+    case 'delQuickIdea': {
+      if (!sure('delQuickIdea:' + id)){ render(); return; }
+      p.fikirler = (p.fikirler || []).filter(x => x.id !== id);
+      break;
+    }
     case 'snapSave': {
       const labelEl = document.getElementById('snapLabel');
       const label = trim(labelEl ? labelEl.value : '') || ('Sürüm ' + ((p.surumler || []).length + 1));
@@ -3218,4 +3516,5 @@ appEl.addEventListener('click', async e => {
 
 if (state.projects.length) ui.projectId = state.projects[0].id;
 render();
+authBoot();
 </script>

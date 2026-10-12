@@ -1,7 +1,7 @@
 {
   "name": "senaryo-atolyesi",
   "productName": "Senaryo Atölyesi",
-  "version": "1.3.1",
+  "version": "1.4.0",
   "description": "Senaryo yazarları için yardımcı uygulama",
   "main": "main.js",
   "scripts": {
