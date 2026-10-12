@@ -87,6 +87,14 @@ input:focus,textarea:focus,select:focus{outline:2px solid var(--red-soft);border
 del.d-del{color:#b42318;text-decoration:line-through}
 ins.d-ins{color:#067647;text-decoration:none;background:rgba(6,118,71,.1)}
 @media (max-width:760px){.cmp-grid{grid-template-columns:1fr}}
+#updPanel{position:fixed;right:16px;bottom:16px;z-index:50;width:min(340px,calc(100vw - 32px))}
+.upd-card{background:#fffdf8;color:#1d1b18;border:1px solid rgba(0,0,0,.12);border-radius:12px;padding:16px 18px;box-shadow:0 8px 28px rgba(0,0,0,.18)}
+.upd-p{margin:0 0 10px;font-weight:600}
+.upd-small{margin:8px 0 0;font-size:13px;color:#5b564e;line-height:1.5}
+.upd-track{height:8px;border-radius:4px;background:rgba(0,0,0,.08);overflow:hidden}
+.upd-track>span{display:block;height:100%;background:#1d1b18;border-radius:4px;transition:width .2s}
+.upd-foot{display:flex;gap:8px;justify-content:flex-end;margin-top:12px;flex-wrap:wrap}
+@keyframes updPulse{0%{margin-left:0;width:25%}50%{margin-left:75%;width:25%}100%{margin-left:0;width:25%}}
 .empty{color:var(--ink2);text-align:center;padding:32px 16px;border:1px dashed var(--line);border-radius:10px;margin-bottom:16px}
 .slug{font-family:"Courier New",Courier,monospace;font-size:13px;font-weight:600;letter-spacing:.02em;text-transform:uppercase;color:var(--ink)}
 
@@ -2335,7 +2343,7 @@ function renderUpdateBox(){
   if (ui.update){
     box.innerHTML = `<button class="upd-btn ready" data-upd="open" title="${esc(ui.update.notes || '')}">
       <span class="upd-dot"></span>
-      <span><strong>Güncelleme var</strong><br><small>Sürüm ${esc(ui.update.version)} indir</small></span></button>`;
+      <span><strong>Güncelleme var</strong><br><small>Sürüm ${esc(ui.update.version)} · uygulama içinde kur</small></span></button>`;
     return;
   }
   const cur = ui.updCurrent || '';
@@ -2344,6 +2352,52 @@ function renderUpdateBox(){
     : ui.updChecked ? 'Güncel' : '';
   box.innerHTML = `<button class="upd-btn" data-upd="check" ${ui.updChecking ? 'disabled' : ''}>
     <span><small>Sürüm ${esc(cur || '…')}${status ? ' · ' + status : ''}</small><br>Güncellemeleri denetle</span></button>`;
+}
+// Güncelleme paneli: indirme ve kurulum ilerlemesi uygulama içinde gösterilir.
+function renderUpdatePanel(){
+  let el = document.getElementById('updPanel');
+  const u = ui.upd;
+  if (!u){ if (el) el.remove(); return; }
+  if (!el){ el = document.createElement('div'); el.id = 'updPanel'; document.body.appendChild(el); }
+  const pct = u.total ? Math.min(100, Math.round(u.received / u.total * 100)) : 0;
+  const ver = esc(u.version || (ui.update && ui.update.version) || '');
+  let body = '', foot = '';
+  if (u.state === 'downloading'){
+    body = `<p class="upd-p">Sürüm ${ver} indiriliyor${u.total ? ` · %${pct}` : '…'}</p>
+      <div class="upd-track"><span style="width:${u.total ? pct : 25}%;${u.total ? '' : 'animation:updPulse 1.2s ease-in-out infinite'}"></span></div>
+      <p class="upd-small">Bu sırada yazmaya devam edebilirsin.</p>`;
+  } else if (u.state === 'installing'){
+    body = `<p class="upd-p">Sürüm ${ver} kuruluyor</p>
+      <div class="upd-track"><span style="width:100%"></span></div>
+      <p class="upd-small">Uygulama kapanacak ve kurulum bitince kendiliğinden yeniden açılacak. Verilerin olduğu gibi kalır.</p>`;
+  } else if (u.state === 'opened'){
+    body = `<p class="upd-p">Kurulum dosyası açıldı</p>
+      <p class="upd-small">Uygulamayı Uygulamalar klasörüne sürükleyip eskisinin üzerine yaz.</p>`;
+    foot = `<button class="btn small" data-upd="close">Tamam</button>`;
+  } else if (u.state === 'error'){
+    body = `<p class="upd-p">Güncelleme tamamlanamadı</p><p class="upd-small">${esc(u.error || '')}</p>`;
+    foot = `<button class="btn small" data-upd="retry">Tekrar dene</button>
+      <button class="btn ghost small" data-upd="close">Kapat</button>`;
+  }
+  el.innerHTML = `<div class="upd-card" role="status" aria-live="polite">${body}${foot ? `<div class="upd-foot">${foot}</div>` : ''}</div>`;
+}
+async function startUpdate(){
+  const d = window.senaryoDesktop;
+  if (!ui.update) return;
+  if (!d || !d.installUpdate){
+    if (d) d.openExternal(ui.update.url);
+    return;
+  }
+  if (ui.upd && (ui.upd.state === 'downloading' || ui.upd.state === 'installing')) return;
+  ui.upd = {state: 'downloading', received: 0, total: 0, version: ui.update.version};
+  renderUpdatePanel();
+  try{
+    const r = await d.installUpdate({version: ui.update.version, url: ui.update.url, sha256: ui.update.sha256 || ''});
+    if (r && r.ok === false) throw new Error(r.error || 'Güncelleme başarısız.');
+  }catch(e){
+    ui.upd = {state: 'error', error: e.message || 'Güncelleme başarısız.', version: ui.update.version};
+    renderUpdatePanel();
+  }
 }
 async function checkForUpdate(){
   const d = window.senaryoDesktop;
@@ -2356,7 +2410,7 @@ async function checkForUpdate(){
     if (!r.ok) throw new Error('feed ' + r.status);
     const j = await r.json();
     ui.update = (j && j.version && j.url && isNewerVersion(j.version, cur))
-      ? {version: String(j.version), url: String(j.url), notes: String(j.notes || '')} : null;
+      ? {version: String(j.version), url: String(j.url), sha256: String(j.sha256 || ''), notes: String(j.notes || '')} : null;
     ui.updError = null;
     ui.updChecked = new Date().toISOString();
   }catch(e){
@@ -2539,12 +2593,25 @@ if (window.claude && window.claude.use){
 document.getElementById('updBox').addEventListener('click', e => {
   const b = e.target.closest('button[data-upd]');
   if (!b) return;
-  if (b.dataset.upd === 'open' && ui.update){
-    if (window.senaryoDesktop) window.senaryoDesktop.openExternal(ui.update.url);
-  } else {
-    checkForUpdate();
-  }
+  const a = b.dataset.upd;
+  if (a === 'open') startUpdate();
+  else if (a === 'retry') startUpdate();
+  else if (a === 'close'){ ui.upd = null; renderUpdatePanel(); }
+  else checkForUpdate();
 });
+document.body.addEventListener('click', e => {
+  const b = e.target.closest('#updPanel button[data-upd]');
+  if (!b) return;
+  const a = b.dataset.upd;
+  if (a === 'retry') startUpdate();
+  else if (a === 'close'){ ui.upd = null; renderUpdatePanel(); }
+});
+if (window.senaryoDesktop && window.senaryoDesktop.onUpdateProgress){
+  window.senaryoDesktop.onUpdateProgress(d => {
+    ui.upd = Object.assign({}, ui.upd || {}, d);
+    renderUpdatePanel();
+  });
+}
 if (window.senaryoDesktop){
   setTimeout(checkForUpdate, 3000);
   setInterval(checkForUpdate, 6 * 60 * 60 * 1000);
