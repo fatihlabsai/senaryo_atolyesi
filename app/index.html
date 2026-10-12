@@ -2786,6 +2786,8 @@ document.getElementById('projectList').addEventListener('click', e => {
 const SB_URL = 'https://ubxmswdfbremkpgemhur.supabase.co';
 const SB_KEY = 'sb_publishable_rJ_8yjEjAPwrcEXiWDsbOw_hfsDzwGD';
 const ACC_KEY = 'senaryo-hesap-v1';
+// Hesap sistemi şimdilik kapalı. Veritabanı düzeltilince true yapılır.
+const AUTH_ENABLED = false;
 const LOCAL_KEY = 'senaryo-yerel-kabul';
 let account = (() => { try { return JSON.parse(localStorage.getItem(ACC_KEY)) || null; } catch (e) { return null; } })();
 let syncTimer = null;
@@ -2837,7 +2839,7 @@ async function sbRest(method, path, body, prefer){
 function setSync(s, msg){ ui.sync = {s, msg: msg || ''}; renderAccount(); }
 // Değişiklikten sonra kısa bir gecikmeyle buluta yaz (art arda tuşlamalarda tek istek gider).
 function bulutSonra(){
-  if (!account) return;
+  if (!AUTH_ENABLED || !account) return;
   clearTimeout(syncTimer);
   setSync('saving', 'Kaydediliyor');
   syncTimer = setTimeout(bulutYaz, 1200);
@@ -2963,6 +2965,7 @@ function syncChoiceHtml(){
 }
 function renderAuthGate(){
   let el = document.getElementById('authGate');
+  if (!AUTH_ENABLED){ if (el) el.remove(); return; }
   const goster = ui.syncChoice ? true : (!account && (!localStorage.getItem(LOCAL_KEY) || !!ui.authOpen));
   if (!goster){ if (el) el.remove(); return; }
   if (!el){ el = document.createElement('div'); el.id = 'authGate'; document.body.appendChild(el); }
@@ -2971,6 +2974,7 @@ function renderAuthGate(){
 function renderAccount(){
   const box = document.getElementById('accBox');
   if (!box) return;
+  if (!AUTH_ENABLED){ box.innerHTML = ''; return; }
   if (!account){
     box.innerHTML = `<button class="upd-btn" data-auth="open"><span><small>${localStorage.getItem(LOCAL_KEY) ? 'Hesapsız kullanım' : 'Hesap yok'}</small><br>Giriş yap · üye ol</span></button>`;
     return;
@@ -3020,7 +3024,7 @@ document.body.addEventListener('click', async e => {
 });
 
 async function authBoot(){
-  if (!account){ render(); return; }
+  if (!AUTH_ENABLED || !account){ render(); return; }
   try { await accTazele(); }
   catch (e) {
     if (e instanceof TypeError){ setSync('error', 'Çevrimdışı. Bağlantı gelince tekrar denenecek.'); }
