@@ -72,6 +72,21 @@ input:focus,textarea:focus,select:focus{outline:2px solid var(--red-soft);border
 
 .card{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:20px;margin-bottom:16px}
 .card-title{margin:0 0 16px}
+.table-wrap{overflow-x:auto}
+.dtab{width:100%;border-collapse:collapse;font-size:14px}
+.dtab th,.dtab td{text-align:left;padding:8px 6px;border-bottom:1px solid rgba(127,127,127,.2);vertical-align:middle}
+.dtab th{font-size:12px;color:var(--ink2);font-weight:600}
+.dbar{display:inline-block;height:6px;border-radius:3px;background:var(--ink2);opacity:.45;vertical-align:middle;min-width:2px}
+.yapi-bar{height:8px;border-radius:4px;background:rgba(127,127,127,.2);overflow:hidden}
+.yapi-bar>span{display:block;height:100%;background:var(--ink2)}
+.yapi-asama{padding:12px 0;border-bottom:1px solid rgba(127,127,127,.2)}
+.yapi-asama.bos strong{opacity:.6}
+.badge-mini{display:inline-block;font-size:12px;padding:2px 8px;border-radius:999px;background:rgba(127,127,127,.15)}
+.cmp-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.cmp-col{font-family:var(--serif);font-size:15px;line-height:1.6;background:rgba(127,127,127,.06);padding:12px;border-radius:8px;overflow-wrap:anywhere}
+del.d-del{color:#b42318;text-decoration:line-through}
+ins.d-ins{color:#067647;text-decoration:none;background:rgba(6,118,71,.1)}
+@media (max-width:760px){.cmp-grid{grid-template-columns:1fr}}
 .empty{color:var(--ink2);text-align:center;padding:32px 16px;border:1px dashed var(--line);border-radius:10px;margin-bottom:16px}
 .slug{font-family:"Courier New",Courier,monospace;font-size:13px;font-weight:600;letter-spacing:.02em;text-transform:uppercase;color:var(--ink)}
 
@@ -270,10 +285,123 @@ dialog .foot{display:flex;justify-content:flex-end;gap:8px;margin-top:8px}
 </dialog>
 
 <script>
+/* Kural tabanlı iskelet: yapay zekâ kullanmadan, projedeki alanlardan logline, sinopsis,
+   bölüm özeti ve sahne taslağı iskeleti kurar. Her çıktı, neyin eksik olduğunu da söyler. */
+(function (root) {
+  const ROLE_KAHRAMAN = 'Kahraman';
+  const ROLE_KARSI = 'Karşıt güç';
+  const trim = s => String(s ?? '').replace(/\s+/g, ' ').trim();
+  const endDot = s => { s = trim(s); if (!s) return ''; return /[.!?…]$/.test(s) ? s : s + '.'; };
+  const words = s => trim(s).split(' ').filter(Boolean).length;
+  const cut = (s, n) => { const w = trim(s).split(' '); return w.length > n ? w.slice(0, n).join(' ') + '…' : trim(s); };
+  const lc = s => String(s ?? '').toLocaleLowerCase('tr-TR');
+
+  function kahraman(p) {
+    return p.chars.find(c => c.role === ROLE_KAHRAMAN) || p.chars[0] || null;
+  }
+  function karsi(p, kh) {
+    return p.chars.find(c => c.role === ROLE_KARSI && (!kh || c.id !== kh.id)) || null;
+  }
+  function locName(p, id) { const l = (p.locs || []).find(x => x.id === id); return l ? l.name : ''; }
+  function sceneOrder(p) { return (p.scenes || []); }
+
+  /* LOGLINE: [Kahraman, tanım] + [ne istiyor] + [engel] + [bedel]. */
+  function logline(p) {
+    const eksik = [];
+    const kh = kahraman(p);
+    if (!kh) eksik.push('Kahraman seçilmemiş (karakter rolünü "Kahraman" yap).');
+    const ad = kh ? kh.name : '(kahraman)';
+    const kim = kh && kh.tag ? `${ad}, ${lc(kh.tag).replace(/^./, c => c)}` : ad;
+    const hedef = kh && kh.want ? trim(kh.want) : '';
+    if (kh && !hedef) eksik.push('Kahramanın "Ne istiyor?" alanı boş.');
+    const ks = karsi(p, kh);
+    let engel = '';
+    if (ks) engel = `ama ${ks.name} buna engel olur`;
+    else if (kh && kh.fear) engel = `ama ${lc(trim(kh.fear))} yüzünden yolu tıkanır`;
+    else eksik.push('Engel yok: bir "Karşıt güç" karakteri ya da kahramanın korkusu ekle.');
+    let bedel = '';
+    if (kh && kh.need) bedel = `ve sonunda ${lc(trim(kh.need))} ile yüzleşmek zorunda kalır`;
+    else eksik.push('Kahramanın "Gerçekte neye ihtiyacı var?" alanı boş (bedel cümlesi için).');
+    const parcalar = [
+      `${kim}${hedef ? ', ' + lc(hedef) : ''} istiyor`,
+      engel,
+      bedel
+    ].filter(Boolean);
+    let metin = endDot(parcalar.join('; ').replace('; ve', ' ve'));
+    if (!hedef) metin = endDot(`${kim} bir yol arıyor; ${engel}`.replace(/; $/, ''));
+    if (words(metin) > 35) { metin = cut(metin, 35); eksik.push('Logline 35 kelimeyi aştı, kısaltıldı. Karakter alanlarını sadeleştir.'); }
+    return {metin, eksik};
+  }
+
+  /* SİNOPSİS: sahnelerin amaçlarını sırayla kurulum, çatışma, sonuç olarak paragraflara ayırır. */
+  function sinopsis(p) {
+    const eksik = [];
+    const sc = sceneOrder(p).filter(s => s.goal || s.brief || s.loc);
+    if (!sc.length) return {metin: '', eksik: ['Sinopsis için en az bir sahnede amaç ya da mekan gerekli.']};
+    // Her sahne tek cümle: amaç + mekan. Karakterler amaç cümlesinde zaten geçer.
+    const cumle = s => {
+      const yer = locName(p, s.loc);
+      const amac = trim(s.goal || s.brief);
+      if (!amac) eksik.push(`"${s.title || yer || 'Bir sahne'}" için amaç yazılmamış.`);
+      if (!amac) return '';
+      return endDot(yer ? `${amac} (${yer.toLocaleUpperCase('tr-TR')})` : amac);
+    };
+    const n = sc.length;
+    const kurulum = sc.slice(0, Math.max(1, Math.ceil(n / 4)));
+    const sonuc = sc.slice(-Math.max(1, Math.ceil(n / 4)));
+    const catisma = sc.slice(kurulum.length, Math.max(kurulum.length, n - sonuc.length));
+    const paragraf = (liste) => liste.map(cumle).filter(Boolean).join(' ');
+    const paragraflar = [paragraf(kurulum), paragraf(catisma), paragraf(sonuc)].filter(Boolean);
+    const son = sc[sc.length - 1];
+    if (son && !son.to) eksik.push('Son sahnenin "Sonda duygu / durum" alanı boş: sonuç cümlesi zayıf kalır.');
+    return {metin: paragraflar.join('\n\n'), eksik};
+  }
+
+  /* BÖLÜM ÖZETİ: her bölümün sahnelerinin amaçlarını birleştirir, son sahneden kanca çıkarır. */
+  function bolumOzetleri(p) {
+    const sonuc = [];
+    (p.episodes || []).forEach((e, i) => {
+      const eksik = [];
+      const sc = sceneOrder(p).filter(s => s.episodeId === e.id);
+      if (!sc.length) { eksik.push('Bu bölümde sahne yok.'); }
+      const amaclar = sc.map(s => trim(s.goal)).filter(Boolean);
+      const ozet = amaclar.length ? amaclar.slice(0, 3).map(endDot).join(' ') : '';
+      if (sc.length && !amaclar.length) eksik.push('Bölümdeki sahnelerin amacı yazılmamış.');
+      const ilk = sc[0], son = sc[sc.length - 1];
+      const amac = ilk && trim(ilk.from) && trim(ilk.to) ? `${trim(ilk.from)} → ${trim(ilk.to)}` : '';
+      const kanca = son && trim(son.to) ? `Son durum: ${trim(son.to)}` : '';
+      sonuc.push({no: i + 1, baslik: e.title || '', ozet, amac, kanca, eksik});
+    });
+    return sonuc;
+  }
+
+  /* SAHNE TASLAĞI: başlık, eylem iskeleti, karakter konuşma yerleri, önemli detaylar. Diyalog uydurmaz. */
+  function sahneTaslagi(p, s) {
+    const eksik = [];
+    const baslik = `${locName(p, s.loc) ? (s.ie || 'İÇ') + '. ' + locName(p, s.loc).toLocaleUpperCase('tr-TR') + ' - ' + (s.time || 'GÜN') : (s.title || 'SAHNE')}`;
+    if (!s.loc) eksik.push('Mekan seçilmemiş.');
+    const satirlar = [];
+    if (trim(s.goal)) satirlar.push(endDot(s.goal));
+    else eksik.push('Amaç yazılmamış: ne değişiyor?');
+    if (trim(s.from) || trim(s.to)) satirlar.push(`(Başta: ${trim(s.from) || '-'}; sonda: ${trim(s.to) || '-'})`);
+    const kisiler = (s.charIds || []).map(id => p.chars.find(c => c.id === id)).filter(Boolean);
+    if (!kisiler.length) eksik.push('Sahneye karakter eklenmemiş.');
+    kisiler.forEach(c => satirlar.push(`${c.name.toLocaleUpperCase('tr-TR')}: `));
+    const detaylar = (p.details || []).filter(d => (d.sceneIds || []).includes(s.id));
+    detaylar.forEach(d => satirlar.push(`[Detay: ${d.name}${d.desc ? ' - ' + d.desc : ''}]`));
+    return {baslik, metin: [baslik, '', ...satirlar].join('\n'), eksik};
+  }
+
+  root.Iskelet = {logline, sinopsis, bolumOzetleri, sahneTaslagi};
+  if (typeof module !== 'undefined') module.exports = root.Iskelet;
+})(typeof globalThis !== 'undefined' ? globalThis : this);
+
+</script>
+<script>
 const KEY = 'senaryo-atolyesi-v1';
 const STATUS_LABEL = {taslak:'Taslak', yazildi:'Yazıldı', revize:'Revize'};
 const NEXT = {taslak:'yazildi', yazildi:'revize', revize:'taslak'};
-const TABS = {sahneler:'Sahneler', bolumler:'Bölümler', karakterler:'Karakterler', yay:'Karakter yayı', mekanlar:'Mekanlar', cekim:'Çekim planı', storyboard:'Storyboard', detaylar:'Detaylar', kontrol:'Tutarlılık', akis:'Akış', logline:'Logline', hedef:'Hedef', portfolyo:'Portfolyo'};
+const TABS = {sahneler:'Sahneler', bolumler:'Bölümler', karakterler:'Karakterler', yay:'Karakter yayı', mekanlar:'Mekanlar', cekim:'Çekim planı', storyboard:'Storyboard', detaylar:'Detaylar', kontrol:'Tutarlılık', analiz:'Analiz', akis:'Akış', logline:'Logline', hedef:'Hedef', portfolyo:'Portfolyo'};
 const GENRES = ['Dram','Komedi','Gerilim','Korku','Romantik','Bilim kurgu','Macera','Suç'];
 const TIMES = ['GÜN','GECE','SABAH','AKŞAM'];
 const INTS = ['İÇ','DIŞ'];
@@ -318,6 +446,8 @@ const trim = s => String(s ?? '').replace(/\s+/g, ' ').trim();
 function charName(p, id){ const c = p.chars.find(x => x.id === id); return c ? c.name : ''; }
 function locName(p, id){ const l = (p.locs || []).find(x => x.id === id); return l ? l.name : ''; }
 function lower(s){ return String(s ?? '').toLocaleLowerCase('tr-TR'); }
+// Karakter adı eşleşmesi: büyük harfte I/İ farkı yüzünden ALI ile Ali aynı kabul edilir.
+function nameKey(s){ return lower(s).replace(/ı/g, 'i'); }
 function upper(s){ return String(s ?? '').toLocaleUpperCase('tr-TR'); }
 function escRe(s){ return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
 // Ad metin içinde kelime olarak geçiyor mu ("Ali", "Aliye" içinde değil)
@@ -412,12 +542,12 @@ function activeEpId(p){
 function parseSceneText(p, text){
   const out = [];
   let last = null;
-  const cast = (p.chars || []).map(c => ({name: c.name, key: lower(c.name)}));
+  const cast = (p.chars || []).map(c => ({name: c.name, key: nameKey(c.name)}));
   String(text || '').split('\n').forEach(raw => {
     const line = raw.trim();
     if (!line){ last = null; return; }
     const m = line.match(/^([^:]{1,40}):\s*(.*)$/);
-    const hit = m ? cast.find(c => c.key === lower(m[1].trim())) : null;
+    const hit = m ? cast.find(c => c.key === nameKey(m[1].trim())) : null;
     if (hit){
       out.push({type: 'cue', text: hit.name});
       last = out[out.length - 1];
@@ -952,10 +1082,46 @@ function ideaIntakeView(){
       </div>
     </section>`;
 }
+/* Yapay zekâ kullanmadan, fikir metninden kurallarla taslak çıkarır. */
+function kuralOzet(p, text){
+  const eksik = [];
+  const cumleler = trim(text).split(/(?<=[.!?…])\s+/).filter(Boolean);
+  if (!cumleler.length) return null;
+  let logline = '';
+  const kh = (typeof Iskelet !== 'undefined' && Iskelet.logline) ? Iskelet.logline(p) : null;
+  if (kh && kh.metin && !kh.eksik.some(x => x.indexOf('Kahraman seçilmemiş') === 0)) {
+    logline = kh.metin;
+    eksik.push(...kh.eksik);
+  } else {
+    const w = cumleler[0].split(' ');
+    logline = w.length > 35 ? w.slice(0, 35).join(' ') + '…' : cumleler[0];
+    eksik.push('Kahraman karakter olarak seçilmemiş; logline fikrin ilk cümlesinden alındı.');
+  }
+  const gruplar = [];
+  for (let i = 0; i < cumleler.length; i += 3) gruplar.push(cumleler.slice(i, i + 3));
+  const sinopsis = gruplar.map(g => g.join(' ')).join('\n\n');
+  if (cumleler.length < 3) eksik.push('Fikir çok kısa; sinopsis için daha fazla cümle yaz.');
+  let bolumler = [];
+  if (isDizi(p)) {
+    bolumler = gruplar.map((g, i) => ({
+      no: i + 1,
+      ozet: g.slice(0, 2).join(' '),
+      amac: '',
+      kanca: g.length > 2 ? g[g.length - 1] : ''
+    }));
+    if (bolumler.length) eksik.push('Bölüm amaçları kurallarla çıkarılamaz; her bölüme kendin ekle.');
+  }
+  return {logline, sinopsis, sezonArki: '', bolumler, at: dkey(), kaynak: 'kural', eksik};
+}
+
 function ideaView(p){
   const busy = ui.idea && ui.idea.busy;
   const g = p.generated;
   const genCards = g ? `
+    ${g.kaynak === 'kural' ? `<section class="card">
+      <p class="muted" style="margin:0 0 8px"><strong>Yapay zekâ kullanılmadı.</strong> Taslak fikir metninden kurallarla çıkarıldı. Metni kendin düzenleyebilirsin.</p>
+      ${g.eksik && g.eksik.length ? `<ul class="muted" style="margin:0;padding-left:20px">${g.eksik.map(x => `<li>${esc(x)}</li>`).join('')}</ul>` : ''}
+    </section>` : ''}
     <section class="card">
       <h3 class="card-title">Önerilen logline</h3>
       <p style="font-family:var(--serif);font-size:18px;margin:0 0 12px">${esc(g.logline || '-')}</p>
@@ -988,7 +1154,8 @@ function ideaView(p){
       </details>
       <div class="actions" style="margin-top:0">
         <button class="btn small" data-act="saveIdea">Notu kaydet</button>
-        ${ui.canDraft ? `<button class="btn primary small" data-act="ideaRun" ${busy ? 'disabled' : ''}>${busy ? 'Özetleniyor…' : 'Özetle'}</button>` : '<span class="muted">Özetleme bu görünümde kullanılamıyor.</span>'}
+        <button class="btn small" data-act="ideaRules" ${busy ? 'disabled' : ''}>Kurallarla taslak çıkar</button>
+        ${ui.canDraft ? `<button class="btn primary small" data-act="ideaRun" ${busy ? 'disabled' : ''}>${busy ? 'Özetleniyor…' : 'Özetle'}</button>` : '<span class="muted">Yapay zekâ özetlemesi bu görünümde kullanılamıyor. Kurallarla taslak çıkarabilirsin.</span>'}
       </div>
       ${ui.idea && ui.idea.err ? `<p class="muted" style="margin:12px 0 0">${esc(ui.idea.err)}</p>` : ''}
     </section>
@@ -1063,6 +1230,9 @@ function shootView(p){
           <input id="shootMaxIn" type="number" min="1" value="${max}" style="width:76px">sahne</label>
         <button class="btn primary small" data-act="shootAuto">Otomatik planla</button>
         <button class="btn ghost small" data-act="shootClear">Planı temizle</button>
+        ${canDl() ? `<button class="btn ghost small" data-act="csvScenes" title="Sahne, çekim günü, mekan ve karakterler (noktalı virgülle ayrılmış, Excel'de açılır)">Sahne listesi (CSV)</button>
+        <button class="btn ghost small" data-act="csvLocs">Mekan listesi (CSV)</button>
+        <button class="btn ghost small" data-act="csvChars">Karakter listesi (CSV)</button>` : ''}
       </div>
     </section>
     ${dayCards || '<div class="empty">Henüz plan yok. Otomatik planla ile başla ya da sahnelere elle gün ata.</div>'}
@@ -1538,6 +1708,348 @@ function detailsView(p){
 }
 
 /* Tutarlılık */
+/* ===== Analiz: diyalog dengesi, hikâye yapısı, kronoloji, sürüm karşılaştırma ===== */
+const ANALIZ_SEC = {diyalog:'Diyalog', yapi:'Yapı', kronoloji:'Kronoloji', surum:'Sürümler'};
+const KIP = [['', 'Normal'], ['geri', 'Geri dönüş'], ['paralel', 'Paralel'], ['ileri', 'İleri sıçrama']];
+const YAPILAR = {
+  'uc-perde': {ad: 'Üç perde', asamalar: [
+    {k:'p1a', ad:'Kurulum', from:0, to:0.12, not:'Kahramanın olağan dünyası ve bozulacak denge.'},
+    {k:'p1b', ad:'Olay tetikleyici', from:0.12, to:0.25, not:'Kahramanı yola çıkaran olay.'},
+    {k:'p2a', ad:'Yükseliş', from:0.25, to:0.5, not:'Engeller ve artan bedel.'},
+    {k:'p2b', ad:'Orta nokta', from:0.5, to:0.75, not:'Dönüm noktası: hikâye yön değiştirir.'},
+    {k:'p3a', ad:'Doruk', from:0.75, to:0.9, not:'En büyük karşılaşma.'},
+    {k:'p3b', ad:'Sonuç', from:0.9, to:1.01, not:'Yeni denge ve bedelin ödenmesi.'}]},
+  'yolculuk': {ad: 'Kahramanın yolculuğu', asamalar: [
+    {k:'y1', ad:'Olağan dünya', from:0, to:0.08, not:'Kahraman bilinen dünyasında.'},
+    {k:'y2', ad:'Macera çağrısı', from:0.08, to:0.12, not:'Denge bozulur.'},
+    {k:'y3', ad:'Çağrıyı reddetme', from:0.12, to:0.16, not:'Kahraman direnir.'},
+    {k:'y4', ad:'Mentörle buluşma', from:0.16, to:0.25, not:'Yardım ve hazırlık.'},
+    {k:'y5', ad:'Eşiği geçme', from:0.25, to:0.37, not:'Kahraman bilinmeyene adım atar.'},
+    {k:'y6', ad:'Sınamalar ve müttefikler', from:0.37, to:0.5, not:'Yeni dünyanın kuralları öğrenilir.'},
+    {k:'y7', ad:'En derin mağaraya yaklaşma', from:0.5, to:0.62, not:'Büyük hazırlık ve korku.'},
+    {k:'y8', ad:'Zorlu sınav', from:0.62, to:0.75, not:'Kahraman dibe vurur.'},
+    {k:'y9', ad:'Ödül', from:0.75, to:0.8, not:'Hedefe ulaşılır ya da bir bilgi kazanılır.'},
+    {k:'y10', ad:'Yola dönüş', from:0.8, to:0.9, not:'Geri dönüş yolculuğu.'},
+    {k:'y11', ad:'Diriliş', from:0.9, to:0.97, not:'Son sınav; kahraman değişmiş olarak çıkar.'},
+    {k:'y12', ad:'Dönüş ve yeni denge', from:0.97, to:1.01, not:'Kahraman yeni dünyaya döner.'}]},
+  'bolum': {ad: 'Bölüm kancası (dizi)', kapsam: 'bolum', asamalar: [
+    {k:'acilis', ad:'Açılış', from:0, to:0.2, not:'Bölüm hızla başlar, izleyiciyi içine alır.'},
+    {k:'gelisme', ad:'Gelişme', from:0.2, to:0.8, not:'Çatışma büyür, yeni bilgi verilir.'},
+    {k:'kanca', ad:'Bölüm sonu kancası', from:0.8, to:1.01, not:'Merak ya da tehlike bırakır, bir sonrakine bağlanır.'}]}
+};
+
+function diyalogOzeti(p){
+  const satir = new Map((p.chars || []).map(c => [c.id, {c, adet: 0, kelime: 0, sahne: new Set()}]));
+  const byName = new Map((p.chars || []).map(c => [nameKey(c.name), c]));
+  const sahnesiz = [];
+  let toplamKelime = 0, toplamAdet = 0;
+  p.scenes.forEach((s, i) => {
+    let cur = null, konusma = 0;
+    parseSceneText(p, s.text).forEach(b => {
+      if (b.type === 'cue'){
+        const c = byName.get(nameKey(b.text));
+        cur = c || null;
+        if (c){ const r = satir.get(c.id); r.adet++; r.sahne.add(s.id); konusma++; toplamAdet++; }
+      } else if (b.type === 'dialogue'){
+        const w = wordCount(b.text);
+        if (cur){ satir.get(cur.id).kelime += w; toplamKelime += w; }
+      } else cur = null;
+    });
+    if (!konusma && trim(s.text)) sahnesiz.push({s, no: i + 1});
+  });
+  const rows = [...satir.values()].map(r => ({c: r.c, adet: r.adet, kelime: r.kelime, sahne: r.sahne.size}))
+    .sort((a, b) => b.kelime - a.kelime || b.adet - a.adet);
+  return {rows, sahnesiz, toplamKelime, toplamAdet, sessiz: rows.filter(r => !r.adet).map(r => r.c)};
+}
+
+function diyalogView(p){
+  if (!p.chars.length) return `<section class="card"><h3 class="card-title">Diyalog dengesi</h3>
+    <p class="muted" style="margin:0">Önce karakter ekle. Replikler sahnede "İSİM: metin" biçiminde ya da isim satırının altına yazılarak sayılır.</p></section>`;
+  const d = diyalogOzeti(p);
+  const top = d.rows[0];
+  const konuşanSayi = d.rows.filter(r => r.adet).length;
+  const uyari = top && d.toplamKelime && konuşanSayi > 1 && top.kelime / d.toplamKelime >= 0.5
+    ? `${top.c.name} replik kelimelerinin yarısından fazlasını söylüyor. Diğer karakterlere de söz verebilirsin.` : '';
+  return `
+    <section class="card">
+      <h3 class="card-title">Diyalog dengesi</h3>
+      <p class="muted" style="margin:-8px 0 12px">Replik, bir karakterin konuştuğu her ayrı söz. Kelime sayısı, karakterin toplam ne kadar konuştuğunu gösterir.</p>
+      ${d.toplamAdet ? `<div class="table-wrap"><table class="dtab">
+        <thead><tr><th>Karakter</th><th>Replik</th><th>Kelime</th><th>Sahne</th><th>Pay</th></tr></thead>
+        <tbody>${d.rows.map(r => {
+          const pct = d.toplamKelime ? Math.round(r.kelime / d.toplamKelime * 100) : 0;
+          return `<tr><td>${esc(r.c.name)}</td><td>${r.adet}</td><td>${r.kelime}</td><td>${r.sahne}</td>
+            <td style="min-width:120px"><span class="dbar" style="width:${pct}%"></span> <span class="muted">%${pct}</span></td></tr>`;
+        }).join('')}</tbody></table></div>
+        ${uyari ? `<p style="margin:12px 0 0">${esc(uyari)}</p>` : ''}`
+      : '<p class="muted" style="margin:0">Henüz replik yok. Sahnelerde karakter adıyla konuşma yazılınca burada görünür.</p>'}
+    </section>
+    <section class="card">
+      <h3 class="card-title">Hiç konuşmayan karakterler</h3>
+      ${d.sessiz.length ? `<p style="margin:0">${d.sessiz.map(c => esc(c.name)).join(', ')}</p>
+        <p class="muted" style="margin:8px 0 0">Bu karakterler ya sessiz kalmalı ya da bir replik almalı. Bilerek sessizse sorun yok.</p>`
+        : '<p class="muted" style="margin:0">Tüm karakterlerin en az bir repliği var.</p>'}
+    </section>
+    <section class="card">
+      <h3 class="card-title">Diyalogsuz sahneler</h3>
+      ${d.sahnesiz.length ? `<ol class="flowlist" style="margin:0">${d.sahnesiz.map(x => `<li>${esc(sluglineOf(p, x.s))}</li>`).join('')}</ol>
+        <p class="muted" style="margin:8px 0 0">Sessiz sahneler, bakış ve eylemle ilerleyen anlar için doğal olabilir.</p>`
+        : '<p class="muted" style="margin:0">Metni olan her sahnede replik var.</p>'}
+    </section>`;
+}
+
+function yapiDagilim(p, key){
+  const y = YAPILAR[key];
+  if (!y) return null;
+  const gruplar = y.kapsam === 'bolum' ? scriptGroups(p) : [{scenes: p.scenes}];
+  const sonuc = {};
+  y.asamalar.forEach(a => sonuc[a.k] = []);
+  gruplar.forEach(g => {
+    const n = g.scenes.length;
+    g.scenes.forEach((s, i) => {
+      let k = s.asama && sonuc[s.asama] ? s.asama : null;
+      if (!k){
+        const pos = i / n;
+        k = (y.asamalar.find(a => pos >= a.from && pos < a.to) || y.asamalar[y.asamalar.length - 1]).k;
+      }
+      sonuc[k].push(s);
+    });
+  });
+  const dolu = y.asamalar.filter(a => sonuc[a.k].length).length;
+  return {y, sonuc, dolu, toplam: y.asamalar.length};
+}
+
+function yapiView(p){
+  const secim = p.yapi && YAPILAR[p.yapi] ? p.yapi : '';
+  const opts = `<option value="">Şablon seçilmedi</option>` +
+    Object.entries(YAPILAR).map(([k, v]) => `<option value="${k}" ${k === secim ? 'selected' : ''}>${esc(v.ad)}</option>`).join('');
+  let govde = '<p class="muted" style="margin:0">Bir şablon seç. Sahneler sıralarına göre aşamalara dağıtılır ve boş kalan aşamalar görünür.</p>';
+  let atama = '';
+  if (secim && p.scenes.length){
+    const d = yapiDagilim(p, secim);
+    const yuzde = Math.round(d.dolu / d.toplam * 100);
+    govde = `
+      <div class="between" style="margin-bottom:6px"><strong>${d.dolu} / ${d.toplam} aşama dolu</strong><span class="muted">%${yuzde}</span></div>
+      <div class="yapi-bar"><span style="width:${yuzde}%"></span></div>
+      <div style="margin-top:8px">${d.y.asamalar.map(a => {
+        const list = d.sonuc[a.k];
+        return `<div class="yapi-asama ${list.length ? '' : 'bos'}">
+          <div class="between"><strong>${esc(a.ad)}</strong><span class="muted">${list.length} sahne</span></div>
+          <div class="muted" style="font-size:13px;margin:2px 0 6px">${esc(a.not)}</div>
+          ${list.length ? list.map(s => `<div style="font-size:13px">${p.scenes.indexOf(s) + 1}. ${esc(sluglineOf(p, s))}</div>`).join('')
+            : '<div style="font-size:13px;color:#b42318">Bu aşamada sahne yok.</div>'}
+        </div>`;
+      }).join('')}</div>`;
+    atama = `<section class="card">
+      <h3 class="card-title">Sahneleri aşamaya ata</h3>
+      <p class="muted" style="margin:-8px 0 12px">Varsayılan atama sahnenin sıradaki konumuna göre yapılır. Bir sahneyi elle başka bir aşamaya alabilirsin.</p>
+      <div class="table-wrap"><table class="dtab"><thead><tr><th>No</th><th>Sahne</th><th>Aşama</th></tr></thead><tbody>
+      ${p.scenes.map((s, i) => `<tr><td>${i + 1}</td><td>${esc(sluglineOf(p, s))}</td><td>
+        <select data-asama="${s.id}" style="width:auto">
+          <option value="">Otomatik</option>
+          ${YAPILAR[secim].asamalar.map(a => `<option value="${a.k}" ${s.asama === a.k ? 'selected' : ''}>${esc(a.ad)}</option>`).join('')}
+        </select></td></tr>`).join('')}
+      </tbody></table></div>
+    </section>`;
+  } else if (secim) {
+    govde = '<p class="muted" style="margin:0">Yapıyı görmek için önce sahne ekle.</p>';
+  }
+  return `
+    <section class="card">
+      <h3 class="card-title">Hikâye yapısı</h3>
+      <div class="field"><label>Şablon</label><select data-yapi style="width:auto">${opts}</select></div>
+      ${govde}
+    </section>${atama}`;
+}
+
+function kronolojiSirasi(p){
+  let son = 0;
+  const liste = p.scenes.map((s, i) => {
+    const has = s.hz !== undefined && s.hz !== null && s.hz !== '' && isFinite(Number(s.hz));
+    if (has) son = Number(s.hz);
+    return {s, i, t: son, elle: has};
+  });
+  liste.sort((a, b) => a.t - b.t || a.i - b.i);
+  return liste;
+}
+
+function kronolojiView(p){
+  if (!p.scenes.length) return `<section class="card"><p class="muted" style="margin:0">Kronoloji için önce sahne ekle.</p></section>`;
+  const sira = kronolojiSirasi(p);
+  const tOf = new Map(sira.map(x => [x.s.id, x.t]));
+  const geri = p.scenes.filter(s => s.kip === 'geri').length;
+  const paralel = p.scenes.filter(s => s.kip === 'paralel').length;
+  return `
+    <section class="card">
+      <h3 class="card-title">Zaman çizelgesi</h3>
+      <p class="muted" style="margin:-8px 0 12px">Her sahneye hikâyedeki zamanını bir sayı olarak ver (1, 2, 3… ya da 1.5 gibi). Boş bırakılan sahne bir önceki sahnenin zamanını alır. Hikâye sırası, ekrandaki sıradan farklı olabilir.</p>
+      <div class="table-wrap"><table class="dtab">
+        <thead><tr><th>Ekran</th><th>Sahne</th><th>Hikâye zamanı</th><th>Tür</th></tr></thead>
+        <tbody>${p.scenes.map((s, i) => `<tr>
+          <td>${i + 1}</td>
+          <td>${esc(sluglineOf(p, s))}</td>
+          <td><input type="number" step="any" data-hz="${s.id}" value="${s.hz ?? ''}" placeholder="${tOf.get(s.id)}" style="width:96px"></td>
+          <td><select data-kip="${s.id}" style="width:auto">${KIP.map(([k, v]) => `<option value="${k}" ${(s.kip || '') === k ? 'selected' : ''}>${v}</option>`).join('')}</select></td>
+        </tr>`).join('')}</tbody></table></div>
+      <p class="muted" style="margin:12px 0 0">Geri dönüş: ${geri} · Paralel: ${paralel}</p>
+    </section>
+    <section class="card">
+      <h3 class="card-title">Hikâye sırasıyla</h3>
+      <ol class="flowlist" style="margin:0">${sira.map(x => `<li>
+        <span>${esc(sluglineOf(p, x.s))}</span>
+        ${x.s.kip && x.s.kip !== 'ileri' ? ` <span class="badge-mini">${esc(KIP.find(k => k[0] === x.s.kip)[1])}</span>` : x.s.kip === 'ileri' ? ` <span class="badge-mini">İleri sıçrama</span>` : ''}
+        <span class="muted" style="font-size:12px"> · ekranda ${x.i + 1}. sahne</span></li>`).join('')}</ol>
+    </section>`;
+}
+
+function surumOku(p, key){
+  if (key === 'cur') return {label: 'Şimdiki hâl', sira: p.scenes.map(s => s.id),
+    sahneler: Object.fromEntries(p.scenes.map(s => [s.id, {baslik: sluglineOf(p, s), metin: s.text || ''}]))};
+  const v = (p.surumler || []).find(x => x.id === key);
+  return v ? {label: v.label, sira: v.sira || Object.keys(v.sahneler), sahneler: v.sahneler} : null;
+}
+
+/* Kelime bazlı fark. Satır sonları da dizilir. Çok büyük metinde düz gösterime döner. */
+function farkHtml(a, b){
+  const tok = t => { const out = []; String(t || '').split('\n').forEach(line => {
+    line.split(/\s+/).filter(Boolean).forEach(w => out.push(w)); out.push('\n'); }); return out; };
+  const x = tok(a), y = tok(b), n = x.length, m = y.length;
+  if (n * m > 2500000){
+    return {a: esc(a).replace(/\n/g, '<br>'), b: esc(b).replace(/\n/g, '<br>'), kaba: true};
+  }
+  const W = m + 1, L = new Uint16Array((n + 1) * (m + 1));
+  for (let i = n - 1; i >= 0; i--) for (let j = m - 1; j >= 0; j--)
+    L[i * W + j] = x[i] === y[j] ? L[(i + 1) * W + j + 1] + 1 : Math.max(L[(i + 1) * W + j], L[i * W + j + 1]);
+  const ea = [], eb = [];
+  let i = 0, j = 0;
+  while (i < n && j < m){
+    if (x[i] === y[j]){ ea.push({t: x[i], k: 'eq'}); eb.push({t: y[j], k: 'eq'}); i++; j++; }
+    else if (L[(i + 1) * W + j] >= L[i * W + j + 1]){ ea.push({t: x[i], k: 'del'}); i++; }
+    else { eb.push({t: y[j], k: 'ins'}); j++; }
+  }
+  while (i < n){ ea.push({t: x[i], k: 'del'}); i++; }
+  while (j < m){ eb.push({t: y[j], k: 'ins'}); j++; }
+  const r = arr => arr.map(o => o.t === '\n' ? '<br>'
+    : o.k === 'eq' ? esc(o.t) : o.k === 'del' ? `<del class="d-del">${esc(o.t)}</del>` : `<ins class="d-ins">${esc(o.t)}</ins>`).join(' ');
+  return {a: r(ea), b: r(eb), kaba: false};
+}
+
+function surumView(p){
+  const list = p.surumler || [];
+  const ch = ui.cmp || {};
+  const a = ch.a && surumOku(p, ch.a) ? ch.a : (list.length ? list[list.length - 1].id : 'cur');
+  const b = ch.b && surumOku(p, ch.b) ? ch.b : 'cur';
+  ui.cmp = {a, b};
+  const tarih = v => { try { return new Date(v.at).toLocaleString('tr-TR', {dateStyle: 'short', timeStyle: 'short'}); } catch (e) { return ''; } };
+  const secenek = (sel, bos) => `<option value="cur" ${sel === 'cur' ? 'selected' : ''}>Şimdiki hâl</option>` +
+    list.map(v => `<option value="${v.id}" ${sel === v.id ? 'selected' : ''}>${esc(v.label)} · ${esc(tarih(v))}</option>`).join('');
+  let karsilastirma = '<p class="muted" style="margin:0">Karşılaştırmak için en az bir sürüm kaydet. Sürüm kaydedildiğinde şimdiki hâl ile karşılaştırabilirsin.</p>';
+  if (list.length || a !== b){
+    const A = surumOku(p, a), B = surumOku(p, b);
+    if (A && B){
+      const ids = [...B.sira, ...A.sira.filter(id => !(id in B.sahneler))];
+      const say = {'aynı': 0, 'değişti': 0, 'eklendi': 0, 'silindi': 0};
+      const satirlar = ids.map(id => {
+        const sa = A.sahneler[id], sb = B.sahneler[id];
+        let durum = sa && sb ? (sa.metin === sb.metin && sa.baslik === sb.baslik ? 'aynı' : 'değişti') : sb ? 'eklendi' : 'silindi';
+        say[durum]++;
+        const baslik = (sb || sa).baslik;
+        if (durum === 'aynı') return `<div class="cmp-row"><div class="between"><strong>${esc(baslik)}</strong><span class="badge-mini">aynı</span></div></div>`;
+        if (durum === 'eklendi') return `<div class="cmp-row"><div class="between"><strong>${esc(baslik)}</strong><span class="badge-mini">eklendi</span></div>
+          <div class="cmp-col" style="margin-top:8px">${esc(sb.metin).replace(/\n/g, '<br>') || '<span class="muted">Boş</span>'}</div></div>`;
+        if (durum === 'silindi') return `<div class="cmp-row"><div class="between"><strong>${esc(baslik)}</strong><span class="badge-mini">silindi</span></div>
+          <div class="cmp-col" style="margin-top:8px">${esc(sa.metin).replace(/\n/g, '<br>') || '<span class="muted">Boş</span>'}</div></div>`;
+        const f = farkHtml(sa.metin, sb.metin);
+        const delta = wordCount(sb.metin) - wordCount(sa.metin);
+        return `<div class="cmp-row"><div class="between"><strong>${esc(baslik)}</strong>
+            <span class="badge-mini">değişti · ${delta >= 0 ? '+' : ''}${delta} kelime</span></div>
+          <div class="cmp-grid" style="margin-top:8px">
+            <div><div class="muted" style="font-size:12px;margin-bottom:4px">${esc(A.label)}</div><div class="cmp-col">${f.a || '<span class="muted">Boş</span>'}</div></div>
+            <div><div class="muted" style="font-size:12px;margin-bottom:4px">${esc(B.label)}</div><div class="cmp-col">${f.b || '<span class="muted">Boş</span>'}</div></div>
+          </div>${f.kaba ? '<p class="muted" style="font-size:12px;margin:6px 0 0">Metin çok uzun; fark gösterilmedi, iki sürüm yan yana.</p>' : ''}</div>`;
+      });
+      karsilastirma = `
+        <div class="row" style="gap:8px;margin-bottom:12px">
+          <span class="badge-mini">aynı ${say['aynı']}</span><span class="badge-mini">değişti ${say['değişti']}</span>
+          <span class="badge-mini">eklendi ${say['eklendi']}</span><span class="badge-mini">silindi ${say['silindi']}</span>
+        </div>
+        ${satirlar.length ? satirlar.join('<hr style="border:0;border-top:1px solid rgba(127,127,127,.2);margin:14px 0">') : '<p class="muted" style="margin:0">Karşılaştırılacak sahne yok.</p>'}`;
+    }
+  }
+  return `
+    <section class="card">
+      <h3 class="card-title">Sürüm kaydet</h3>
+      <p class="muted" style="margin:-8px 0 12px">Sürüm, o anki bütün sahnelerin kopyasıdır. Sonra iki sürümü yan yana karşılaştırabilirsin. Sürümler bu tarayıcıda ve proje dosyasında saklanır; en fazla 12 sürüm tutulur.</p>
+      <div class="row" style="gap:8px">
+        <input id="snapLabel" placeholder="Örn. Taslak 2, Yapımcıya giden" style="flex:1;min-width:180px">
+        <button class="btn primary small" data-act="snapSave" ${p.scenes.length ? '' : 'disabled'}>Kaydet</button>
+      </div>
+      ${list.length ? `<div style="margin-top:14px">${list.slice().reverse().map(v => `<div class="between" style="padding:6px 0;border-bottom:1px solid rgba(127,127,127,.15)">
+        <span>${esc(v.label)} <span class="muted" style="font-size:12px">· ${esc(tarih(v))} · ${Object.keys(v.sahneler || {}).length} sahne</span></span>
+        ${delBtn('delSnap', v.id, 'Sil')}</div>`).join('')}</div>` : ''}
+    </section>
+    <section class="card">
+      <h3 class="card-title">Karşılaştır</h3>
+      <div class="row" style="gap:10px;margin-bottom:14px">
+        <label class="muted" style="display:flex;gap:6px;align-items:center">Eski<select data-cmp="a" style="width:auto;max-width:100%">${secenek(a)}</select></label>
+        <label class="muted" style="display:flex;gap:6px;align-items:center">Yeni<select data-cmp="b" style="width:auto;max-width:100%">${secenek(b)}</select></label>
+      </div>
+      ${karsilastirma}
+    </section>`;
+}
+
+function csvCell(v){ const s = String(v ?? ''); return /[";\r\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; }
+function csvBlob(rows){ return new Blob(['﻿' + rows.map(r => r.map(csvCell).join(';')).join('\r\n')], {type: 'text/csv;charset=utf-8'}); }
+function gunOzet(list){ return [...new Set(list.map(s => +s.shootDay).filter(Boolean))].sort((x, y) => x - y).map(d => d + '. gün').join(', '); }
+
+function csvSahneler(p){
+  const rows = [['Sahne no', 'Çekim günü', 'Bölüm', 'Sahne', 'İç/Dış', 'Mekan', 'Gün/Gece', 'Karakterler', 'Kelime', 'Durum']];
+  p.scenes.map((s, i) => ({s, i}))
+    .sort((a, b) => (+a.s.shootDay || 999) - (+b.s.shootDay || 999) || a.i - b.i)
+    .forEach(({s, i}) => rows.push([
+      i + 1, +s.shootDay ? (+s.shootDay + '. gün') : 'Atanmadı', isDizi(p) ? (epName(p, s.episodeId) || '') : '',
+      s.title || '', s.ie || 'İÇ', locName(p, s.loc), s.time || 'GÜN',
+      (s.charIds || []).map(id => charName(p, id)).filter(Boolean).join(', '), wordCount(s.text), s.status || ''
+    ]));
+  return rows;
+}
+function csvMekanlar(p){
+  const rows = [['Mekan', 'İç/Dış', 'Sahne sayısı', 'Sahne sıraları', 'Çekim günleri']];
+  (p.locs || []).forEach(l => {
+    const list = p.scenes.map((s, i) => ({s, i})).filter(x => x.s.loc === l.id);
+    rows.push([l.name, list[0] ? (list[0].s.ie || 'İÇ') : '', list.length,
+      list.map(x => x.i + 1).join(', '), gunOzet(list.map(x => x.s))]);
+  });
+  return rows;
+}
+function csvKarakterler(p){
+  const d = diyalogOzeti(p);
+  const rows = [['Karakter', 'Rol', 'Replik', 'Konuşma kelimesi', 'Sahne sayısı', 'Sahne sıraları', 'Çekim günleri']];
+  (p.chars || []).forEach(c => {
+    const list = p.scenes.map((s, i) => ({s, i})).filter(x => (x.s.charIds || []).includes(c.id));
+    const r = d.rows.find(x => x.c.id === c.id) || {adet: 0, kelime: 0};
+    rows.push([c.name, c.role || '', r.adet, r.kelime, list.length, list.map(x => x.i + 1).join(', '), gunOzet(list.map(x => x.s))]);
+  });
+  return rows;
+}
+
+function analizSecim(){ return ui.analizSec && ANALIZ_SEC[ui.analizSec] ? ui.analizSec : 'diyalog'; }
+function analizBody(p){
+  return {diyalog: diyalogView, yapi: yapiView, kronoloji: kronolojiView, surum: surumView}[analizSecim()](p);
+}
+function analizView(p){
+  const sec = analizSecim();
+  const nav = `<div class="row" style="gap:6px;margin-bottom:14px">${Object.entries(ANALIZ_SEC).map(([k, v]) =>
+    `<button class="btn small ${sec === k ? 'primary' : 'ghost'}" data-act="analizSec" data-sec="${k}" aria-pressed="${sec === k}">${v}</button>`).join('')}</div>`;
+  return nav + `<div id="analizBody">${analizBody(p)}</div>`;
+}
+// Metin ve sayı alanları, düğmeye tıklanırken blur ile değişir. Tüm ekranı yenilemek tıklamayı yutar,
+// bu yüzden yalnızca gövde yenilenir.
+function analizYenile(){
+  const box = document.getElementById('analizBody');
+  if (box && cur()) box.innerHTML = analizBody(cur());
+}
+
 function consistencyView(p){
   const issues = checkConsistency(p);
   return `<section class="card">
@@ -1976,7 +2488,7 @@ function render(){
     return;
   }
 
-  const views = {sahneler: scenesView, bolumler: episodesView, karakterler: charsView, yay: arcView, cekim: shootView, storyboard: storyboardView, mekanlar: locsView, detaylar: detailsView, kontrol: consistencyView, akis: flowView, logline: loglineView, hedef: goalView, portfolyo: portfolioView};
+  const views = {sahneler: scenesView, bolumler: episodesView, karakterler: charsView, yay: arcView, cekim: shootView, storyboard: storyboardView, mekanlar: locsView, detaylar: detailsView, kontrol: consistencyView, analiz: analizView, akis: flowView, logline: loglineView, hedef: goalView, portfolyo: portfolioView};
   const issueCount = checkConsistency(p).length;
   const counts = {sahneler: p.scenes.length, bolumler: p.episodes.length, karakterler: p.chars.length, mekanlar: p.locs.length, detaylar: p.details.length, kontrol: issueCount, logline: p.loglines.length};
 
@@ -2104,6 +2616,27 @@ appEl.addEventListener('change', e => {
       .catch(err => { alert(err.message); });
     return;
   }
+  if (e.target.dataset && e.target.dataset.cmp !== undefined){
+    ui.cmp = ui.cmp || {}; ui.cmp[e.target.dataset.cmp] = e.target.value; render(); return;
+  }
+  if (e.target.dataset && e.target.dataset.yapi !== undefined){
+    cur().yapi = e.target.value || ''; save(); render(); return;
+  }
+  if (e.target.dataset && e.target.dataset.asama !== undefined){
+    const s = cur().scenes.find(x => x.id === e.target.dataset.asama);
+    if (s){ if (e.target.value) s.asama = e.target.value; else delete s.asama; save(); render(); }
+    return;
+  }
+  if (e.target.dataset && e.target.dataset.hz !== undefined){
+    const s = cur().scenes.find(x => x.id === e.target.dataset.hz);
+    if (s){ if (e.target.value === '') delete s.hz; else s.hz = Number(e.target.value); save(); analizYenile(); }
+    return;
+  }
+  if (e.target.dataset && e.target.dataset.kip !== undefined){
+    const s = cur().scenes.find(x => x.id === e.target.dataset.kip);
+    if (s){ if (e.target.value) s.kip = e.target.value; else delete s.kip; save(); analizYenile(); }
+    return;
+  }
   if (e.target.dataset && e.target.dataset.arcs !== undefined){
     const s = cur().scenes.find(x => x.id === e.target.dataset.arcs);
     if (s){ s.arc = s.arc || {}; s.arc[e.target.dataset.cid] = e.target.value.trim(); save(); }
@@ -2210,6 +2743,29 @@ appEl.addEventListener('click', async e => {
       download((p.title || 'proje') + '-yedek.json', new Blob([JSON.stringify(p, null, 2)], {type: 'application/json'})); return;
     case 'portfolio':
       download((p.title || 'portfolyo') + '-portfolyo.html', new Blob([buildPortfolio(p)], {type: 'text/html'})); return;
+    case 'analizSec': ui.analizSec = b.dataset.sec; break;
+    case 'snapSave': {
+      const labelEl = document.getElementById('snapLabel');
+      const label = trim(labelEl ? labelEl.value : '') || ('Sürüm ' + ((p.surumler || []).length + 1));
+      p.surumler = p.surumler || [];
+      p.surumler.push({
+        id: uid(), label, at: new Date().toISOString(),
+        sira: p.scenes.map(s => s.id),
+        sahneler: Object.fromEntries(p.scenes.map(s => [s.id, {baslik: sluglineOf(p, s), metin: s.text || ''}]))
+      });
+      if (p.surumler.length > 12) p.surumler.splice(0, p.surumler.length - 12);
+      ui.cmp = null;
+      break;
+    }
+    case 'delSnap': {
+      if (!sure('delSnap:' + id)){ render(); return; }
+      p.surumler = (p.surumler || []).filter(v => v.id !== id);
+      ui.cmp = null;
+      break;
+    }
+    case 'csvScenes': download(p.title + '-sahne-listesi.csv', csvBlob(csvSahneler(p))); return;
+    case 'csvLocs': download(p.title + '-mekan-listesi.csv', csvBlob(csvMekanlar(p))); return;
+    case 'csvChars': download(p.title + '-karakter-listesi.csv', csvBlob(csvKarakterler(p))); return;
     case 'screenplay': {
       const ep = b.dataset.ep;
       const idxEp = ep ? epIndex(p, ep) : -1;
@@ -2249,6 +2805,15 @@ appEl.addEventListener('click', async e => {
     }
     case 'ideaDone': {
       p.stage = 'done'; ui.tab = 'sahneler'; ui.epFilter = 'tumu'; ui.idea = null;
+      break;
+    }
+    case 'ideaRules': {
+      const el = document.getElementById('ideaIn');
+      if (el) p.idea = el.value;
+      const g = kuralOzet(p, p.idea || '');
+      if (!g){ ui.idea = {err: 'Önce fikrini birkaç cümleyle yaz.'}; break; }
+      p.generated = g;
+      ui.idea = null;
       break;
     }
     case 'ideaRun': {
